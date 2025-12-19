@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plotly Example - GitHub Pages</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="plot-config.js"></script>
     <style>
         * {
             margin: 0;
@@ -64,96 +65,14 @@
     </div>
 
     <script>
-        // Sample data for demonstration
-        const trace1 = {
-            x: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            y: [20, 14, 23, 25, 22, 30, 28, 35, 32, 28, 25, 30],
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Sales',
-            line: {
-                color: 'rgb(102, 126, 234)',
-                width: 3
-            },
-            marker: {
-                size: 10,
-                color: 'rgb(102, 126, 234)'
-            }
-        };
-
-        const trace2 = {
-            x: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            y: [15, 18, 20, 22, 19, 25, 24, 28, 26, 23, 20, 24],
-            type: 'scatter',
-            mode: 'lines+markers',
-            name: 'Revenue',
-            line: {
-                color: 'rgb(118, 75, 162)',
-                width: 3
-            },
-            marker: {
-                size: 10,
-                color: 'rgb(118, 75, 162)'
-            }
-        };
-
-        const data = [trace1, trace2];
-
-        const layout = {
-            title: {
-                text: 'Monthly Sales & Revenue Trends',
-                font: {
-                    size: 24,
-                    color: '#333'
-                }
-            },
-            xaxis: {
-                title: 'Month',
-                titlefont: {
-                    size: 14,
-                    color: '#666'
-                },
-                tickfont: {
-                    size: 12
-                }
-            },
-            yaxis: {
-                title: 'Amount (in thousands)',
-                titlefont: {
-                    size: 14,
-                    color: '#666'
-                },
-                tickfont: {
-                    size: 12
-                }
-            },
-            hovermode: 'closest',
-            plot_bgcolor: 'white',
-            paper_bgcolor: 'white',
-            legend: {
-                x: 0.7,
-                y: 0.95,
-                bgcolor: 'rgba(255, 255, 255, 0.8)',
-                bordercolor: '#ddd',
-                borderwidth: 1
-            },
-            margin: {
-                l: 60,
-                r: 40,
-                t: 60,
-                b: 50
-            }
-        };
-
-        const config = {
-            responsive: true,
-            displayModeBar: true,
-            displaylogo: false,
-            modeBarButtonsToRemove: ['pan2d', 'lasso2d']
-        };
-
-        // Render the plot
-        Plotly.newPlot('plotly-chart', data, layout, config);
+        // Load data and render the plot
+        loadChartData().then(({ plotData, plotLayout, plotConfig }) => {
+            Plotly.newPlot('plotly-chart', plotData, plotLayout, plotConfig);
+        }).catch(error => {
+            console.error('Failed to load chart:', error);
+            document.getElementById('plotly-chart').innerHTML = 
+                '<p style="color: red; padding: 20px;">Error loading chart data. Please check the console for details.</p>';
+        });
     </script>
 </body>
 </html>
