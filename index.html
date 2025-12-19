@@ -28,7 +28,7 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 40px;
         }
-        
+
         h1 {
             color: #333;
             margin-bottom: 10px;
@@ -51,12 +51,14 @@
         #plotly-chart {
             background: white;
             border-radius: 4px;
+            min-height: 500px;
+            width: 100%;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Plotly Visualization Example</h1>
+        <h1>Democratization and Autocratization Trends Over Time</h1>
         <p class="subtitle">Interactive data visualization powered by Plotly.js</p>
         
         <div class="plot-container">
@@ -65,13 +67,31 @@
     </div>
 
     <script>
-        // Load data and render the plot
-        loadChartData().then(({ plotData, plotLayout, plotConfig }) => {
-            Plotly.newPlot('plotly-chart', plotData, plotLayout, plotConfig);
-        }).catch(error => {
-            console.error('Failed to load chart:', error);
-            document.getElementById('plotly-chart').innerHTML = 
-                '<p style="color: red; padding: 20px;">Error loading chart data. Please check the console for details.</p>';
+        // Wait for DOM to be ready and Plotly to be loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure Plotly is loaded
+            if (typeof Plotly === 'undefined') {
+                console.error('Plotly.js is not loaded');
+                document.getElementById('plotly-chart').innerHTML = 
+                    '<p style="color: red; padding: 20px;">Error: Plotly.js library failed to load.</p>';
+                return;
+            }
+            
+            // Load data and render the plot
+            if (typeof loadChartData === 'function') {
+                loadChartData().then(({ plotData, plotLayout, plotConfig }) => {
+                    Plotly.newPlot('plotly-chart', plotData, plotLayout, plotConfig);
+                }).catch(error => {
+                    console.error('Failed to load chart:', error);
+                    document.getElementById('plotly-chart').innerHTML = 
+                        '<p style="color: red; padding: 20px;">Error loading chart data. Please check the console for details.<br>' + 
+                        'Note: If opening the file directly, you may need to use a local server due to CORS restrictions.</p>';
+                });
+            } else {
+                console.error('loadChartData function is not defined');
+                document.getElementById('plotly-chart').innerHTML = 
+                    '<p style="color: red; padding: 20px;">Error: plot-config.js failed to load.</p>';
+            }
         });
     </script>
 </body>
