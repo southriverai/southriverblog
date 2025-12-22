@@ -1,0 +1,21 @@
+# Jekyll configuration for GitHub Pages
+# Exclude post_markdown directory from Jekyll processing
+# since it's handled by JavaScript
+
+exclude:
+  - post_markdown/
+  - post_markdown/**
+  - __pycache__/
+  - script/
+  - soutriverblog/
+  - poetry.lock
+  - pyproject.toml
+  - README_chart_extraction.md
+  - README.md
+
+# Disable Jekyll processing of markdown files
+# We handle markdown rendering in JavaScript
+markdown: kramdown
+kramdown:
+  input: GFM
+
