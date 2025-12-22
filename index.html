@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plotly Example - GitHub Pages</title>
+    <title>South River Blog</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="plot-config.js"></script>
+    <script src="chart-viewer.js"></script>
+    <script src="posts-viewer.js"></script>
     <style>
         * {
             margin: 0;
@@ -54,44 +56,243 @@
             min-height: 500px;
             width: 100%;
         }
+
+        /* Tabs styling */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 30px;
+            gap: 0;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .tab-button:hover {
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Posts styling */
+        .posts-container {
+            max-width: 100%;
+        }
+
+        .posts-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .posts-header h2 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .posts-count {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .post {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .post-header {
+            margin-bottom: 20px;
+        }
+
+        .post-title {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .post-meta {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .post-content {
+            color: #444;
+            line-height: 1.8;
+        }
+
+        .post-content h1,
+        .post-content h2,
+        .post-content h3,
+        .post-content h4 {
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .post-content h1 {
+            font-size: 2em;
+        }
+
+        .post-content h2 {
+            font-size: 1.6em;
+        }
+
+        .post-content h3 {
+            font-size: 1.3em;
+        }
+
+        .post-content p {
+            margin-bottom: 15px;
+        }
+
+        .post-content ul,
+        .post-content ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .post-content li {
+            margin-bottom: 8px;
+        }
+
+        .post-content a {
+            color: #667eea;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        .post-content a:hover {
+            border-bottom-color: #667eea;
+        }
+
+        .post-content strong {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .post-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-posts,
+        .error-message {
+            padding: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            background: #ffebee;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Democratization and Autocratization Trends Over Time</h1>
-        <p class="subtitle">Interactive data visualization powered by Plotly.js</p>
+        <h1>South River Blog</h1>
+        <p class="subtitle">Data visualization and insights</p>
         
-        <div class="plot-container">
-            <div id="plotly-chart"></div>
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="posts">Posts</button>
+            <button class="tab-button" data-tab="chart">Chart</button>
+        </div>
+
+        <!-- Posts Tab Content -->
+        <div id="posts-tab" class="tab-content active">
+            <div id="posts-container"></div>
+        </div>
+
+        <!-- Chart Tab Content -->
+        <div id="chart-tab" class="tab-content">
+            <h2 style="margin-bottom: 20px; color: #333;">Democratization and Autocratization Trends Over Time</h2>
+            <div class="plot-container">
+                <div id="plotly-chart"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Wait for DOM to be ready and Plotly to be loaded
+        // Tab switching functionality
         document.addEventListener('DOMContentLoaded', function() {
-            // Ensure Plotly is loaded
-            if (typeof Plotly === 'undefined') {
-                console.error('Plotly.js is not loaded');
-                document.getElementById('plotly-chart').innerHTML = 
-                    '<p style="color: red; padding: 20px;">Error: Plotly.js library failed to load.</p>';
-                return;
-            }
-            
-            // Load data and render the plot
-            if (typeof loadChartData === 'function') {
-                loadChartData().then(({ plotData, plotLayout, plotConfig }) => {
-                    Plotly.newPlot('plotly-chart', plotData, plotLayout, plotConfig);
-                }).catch(error => {
-                    console.error('Failed to load chart:', error);
-                    document.getElementById('plotly-chart').innerHTML = 
-                        '<p style="color: red; padding: 20px;">Error loading chart data. Please check the console for details.<br>' + 
-                        'Note: If opening the file directly, you may need to use a local server due to CORS restrictions.</p>';
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            let postsViewer = null;
+            let chartViewer = null;
+
+            // Tab switching
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Update active states
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(`${targetTab}-tab`).classList.add('active');
+
+                    // Initialize posts viewer when posts tab is first opened
+                    if (targetTab === 'posts' && !postsViewer) {
+                        postsViewer = new PostsViewer('posts-container');
+                        postsViewer.init().catch(error => {
+                            console.error('Failed to initialize posts viewer:', error);
+                            document.getElementById('posts-container').innerHTML = 
+                                '<div class="error-message">Failed to load posts. Please check the console for details.</div>';
+                        });
+                    }
+
+                    // Initialize chart viewer when chart tab is first opened
+                    if (targetTab === 'chart' && !chartViewer) {
+                        chartViewer = new ChartViewer('plotly-chart');
+                        chartViewer.init().catch(error => {
+                            console.error('Failed to initialize chart viewer:', error);
+                        });
+                    }
                 });
-            } else {
-                console.error('loadChartData function is not defined');
-                document.getElementById('plotly-chart').innerHTML = 
-                    '<p style="color: red; padding: 20px;">Error: plot-config.js failed to load.</p>';
-            }
+            });
+
+            // Initialize posts viewer on page load (default tab)
+            postsViewer = new PostsViewer('posts-container');
+            postsViewer.init().catch(error => {
+                console.error('Failed to initialize posts viewer:', error);
+                document.getElementById('posts-container').innerHTML = 
+                    '<div class="error-message">Failed to load posts. Please check the console for details.</div>';
+            });
         });
     </script>
 </body>

@@ -24,12 +24,6 @@ Simply open `index.html` in your web browser, or use a local server:
 ```bash
 # Using Python
 python -m http.server 8000
-
-# Using Node.js (http-server)
-npx http-server
-
-# Using PHP
-php -S localhost:8000
 ```
 
 Then navigate to `http://localhost:8000` in your browser.
