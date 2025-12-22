@@ -1,12 +1,11 @@
 # South River Blog - GitHub Pages
 
-A GitHub Pages site featuring interactive Plotly visualizations.
+A GitHub Pages site
 
-## Features
-
-- Interactive Plotly.js charts
-- Responsive design
-- Modern UI with gradient background
+# Build with
+poetry install
+# download posts
+python scripts/download_post.py
 
 ## Setup for GitHub Pages
 
@@ -16,6 +15,11 @@ A GitHub Pages site featuring interactive Plotly visualizations.
 4. Under "Source", select the branch (usually `main` or `master`)
 5. Click "Save"
 6. Your site will be available at `https://[your-username].github.io/[repository-name]/`
+
+# push
+git commit --allow-empty -m "force pages rebuild"
+git push
+
 
 ## Local Development
 
@@ -27,7 +31,3 @@ python -m http.server 8000
 ```
 
 Then navigate to `http://localhost:8000` in your browser.
-
-## Files
-
-- `index.html` - Main page with Plotly visualization example
