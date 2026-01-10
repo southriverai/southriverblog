@@ -12,6 +12,11 @@ def download_post(document_id: str, name:str) -> str:
         f.write(response.text)
 
 if __name__ == "__main__":
-    document_id = "1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo"
-    name = "the equality pulse"
-    download_post(document_id, name)
+    document_ids = []
+    document_ids.append("1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo")
+    document_ids.append("1yiZzJee9BW_HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro")
+    names = []
+    names.append("the equality pulse")
+    names.append("The insane engineering of paragliding")
+    for document_id, name in zip(document_ids, names):
+        download_post(document_id, name)

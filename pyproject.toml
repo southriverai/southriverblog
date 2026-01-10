@@ -18,6 +18,9 @@ opencv-python = "^4.12.0.88"
 matplotlib = "^3.10.8"
 scikit-learn = "^1.8.0"
 #findpeaks = "^2.7.5"
+beautifulsoup4 = "^4.14.3"
+fastapi = "^0.128.0"
+boto3 = "^1.42.18"
 
 [tool.poetry.group.dev.dependencies]
 

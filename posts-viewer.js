@@ -69,9 +69,11 @@ class PostsViewer {
                 // Fallback: try to load known files
                 // You can update this list or create a manifest.json
                 const knownFiles = [
+                    'paragliding.md',
                     'the equality pulse.md'
                 ];
                 
+                // Load posts sequentially to ensure proper order
                 for (const file of knownFiles) {
                     await this.loadPost(file);
                 }
