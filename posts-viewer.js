@@ -66,17 +66,12 @@ class PostsViewer {
                     await this.loadPost(file);
                 }
             } else {
-                // Fallback: try to load known files
-                // You can update this list or create a manifest.json
-                const knownFiles = [
-                    'paragliding.md',
-                    'the equality pulse.md'
-                ];
+                // Fallback: Try to discover markdown files by attempting common patterns
+                // This is a best-effort approach since we can't list directories in static sites
+                console.warn('manifest.json not found. Attempting to discover markdown files...');
                 
-                // Load posts sequentially to ensure proper order
-                for (const file of knownFiles) {
-                    await this.loadPost(file);
-                }
+                // Try common filenames or show error
+                this.showError('manifest.json not found. Please ensure the download script has created it, or manually create post_markdown/manifest.json with a list of markdown files.');
             }
         } catch (error) {
             console.error('Error loading posts:', error);

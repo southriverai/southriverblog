@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import requests
 import unicodedata
 
@@ -49,6 +50,25 @@ def download_post(document_id: str) -> str:
     
     return path_file
 
+def update_manifest():
+    """
+    Update manifest.json to include all markdown files in post_markdown directory.
+    """
+    manifest_path = os.path.join("post_markdown", "manifest.json")
+    
+    # Get all markdown files in the directory
+    if os.path.exists("post_markdown"):
+        all_files = [f for f in os.listdir("post_markdown") 
+                     if f.endswith('.md') and os.path.isfile(os.path.join("post_markdown", f))]
+        # Sort alphabetically for consistent ordering
+        all_files.sort()
+        
+        # Write manifest.json
+        manifest = {"files": all_files}
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2)
+        print(f"Updated manifest.json with {len(all_files)} files")
+
 if __name__ == "__main__":
     document_ids = []
     document_ids.append("1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo")
@@ -57,3 +77,6 @@ if __name__ == "__main__":
     for document_id in document_ids:
         path = download_post(document_id)
         print(f"Downloaded: {path}")
+    
+    # Update manifest.json after all downloads are complete
+    update_manifest()
