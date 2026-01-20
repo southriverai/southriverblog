@@ -1,80 +1,142 @@
-from paragliding.model import AircraftModel, FlightState, FlightConditions, FlightPolicy, Termal, FlightAction
+from tqdm import tqdm
 
-def simulate_termal(flight_conditions: FlightConditions, aircraft_model: AircraftModel, flight_state: FlightState, flight_action: FlightAction, termal: Termal):
-    altitude_to_ceiling_m = flight_conditions.termal_ceiling_m - flight_state.list_altitude_m[-1]
-    flight_time_remaining_s = flight_conditions.landing_time_s - flight_state.list_time_s[-1]
-    time_to_node_s = altitude_to_ceiling_m / termal.net_rise_m_s
-    print(f"time_to_node_s: {time_to_node_s} flight_time_remaining_s: {flight_time_remaining_s}")
-    if time_to_node_s > flight_time_remaining_s:
-        print("land out of time")
-        # we dont reach the ceiling before the landing time, we just fly to the ceiling and land
-        time_to_node_s = flight_time_remaining_s
+from paragliding.model import AircraftModel, FlightConditions, FlightPolicy, FlightState, Termal
+
+
+def simulate_termal(
+    flight_conditions: FlightConditions,
+    aircraft_model: AircraftModel,
+    flight_state: FlightState,
+    termal: Termal,
+    time_step_s: float,
+):
+    #    print(f"Simulating termal {termal.distance_start_m} to {termal.distance_end_m}")
+    last_node_time_s = flight_state.list_time_s[-1]
+    last_node_altitude_m = flight_state.list_altitude_m[-1]
+    last_node_distance_m = flight_state.list_distance_m[-1]
+
+    node_time_s = last_node_time_s + time_step_s
+    node_distance_m = last_node_distance_m
+    node_altitude_m = last_node_altitude_m + termal.net_climb_m_s * time_step_s
+    is_landed = False
+
+    # Check if we've reached thermal ceiling
+    if node_altitude_m >= flight_conditions.termal_ceiling_m:
+        # not further climbing
+        node_altitude_m = flight_conditions.termal_ceiling_m
+
+    # Check if we've max flight time
+    if node_time_s >= flight_conditions.landing_time_s:
+        # node_time_s = flight_conditions.landing_time_s
+        # Hacky
         is_landed = True
-    else:
-        is_landed = False
 
-    distance_to_node_m = 0 # we are termal node so we dont fly any distance
-    altitude_to_node_m = termal.net_rise_m_s * time_to_node_s
-    flight_state.fly_distance(time_to_node_s, distance_to_node_m, altitude_to_node_m, termal.net_rise_m_s, is_landed=is_landed)
-
-
-def simulate_progress(flight_conditions: FlightConditions, aircraft_model: AircraftModel, flight_state: FlightState, flight_action: FlightAction, termal: Termal):
-    time_s = flight_state.list_time_s[-1]
-    velocity_m_s = flight_action.velocity_m_s
-    sink_rate_m_s = aircraft_model.get_sink_rate_m_s(velocity_m_s)
-    time_to_termal_s  = termal.distance_from_last_termal_m / velocity_m_s
-    if time_s + time_to_termal_s > flight_conditions.landing_time_s:
-        print("land out of time")
-        # we were forced to land before we reached the termal so we just travel the remaining distance at the current velocity
-        remaining_flight_time_s = flight_conditions.landing_time_s - time_s
-        remaining_distance_m = velocity_m_s * remaining_flight_time_s
-        remaining_altitude_m = sink_rate_m_s * remaining_flight_time_s
-        flight_state.fly_distance(remaining_flight_time_s, remaining_distance_m, remaining_altitude_m, 0, is_landed=True)
-    else:
-        print("not out of time")
-        # check if we have reached actual termal
-        altitute_at_termal_m = flight_state.list_altitude_m[-1] + sink_rate_m_s * time_to_termal_s
-        if altitute_at_termal_m < 0:
-            print("land out of altitude")
-            # we were forced to land before we reaced the termal se we had to land
-            time_to_node_s = flight_state.list_altitude_m[-1] / sink_rate_m_s
-            distance_to_node_m = velocity_m_s * time_to_node_s
-            altitude_to_node_m = 0
-            flight_state.fly_distance(time_to_node_s, distance_to_node_m, altitude_to_node_m, 0, is_landed=True)
-        else:
-            # we just fly to the next termal
-            time_to_node_s = time_to_termal_s
-            distance_to_node_m = termal.distance_from_last_termal_m
-            altitude_to_node_m = sink_rate_m_s * time_to_termal_s
-            #print(f"fly to termal time {time_to_termal_s}  distance:{termal.distance_from_last_termal_m} sink:{sink_to_termal_m}")
-            flight_state.fly_distance(time_to_node_s, distance_to_node_m, altitude_to_node_m, termal.net_rise_m_s, is_landed=False)
+    flight_state.list_time_s.append(node_time_s)
+    flight_state.list_distance_m.append(node_distance_m)
+    flight_state.list_altitude_m.append(node_altitude_m)
+    flight_state.is_landed = is_landed
 
 
-def simulate_flight(flight_conditions: FlightConditions, aircraft_model: AircraftModel, flight_policy: FlightPolicy) -> FlightState:
+def simulate_progress_to_termal(
+    flight_conditions: FlightConditions,
+    aircraft_model: AircraftModel,
+    flight_state: FlightState,
+    termal: Termal,
+):
+    last_node_time_s = flight_state.list_time_s[-1]
+    last_node_altitude_m = flight_state.list_altitude_m[-1]
+    last_node_distance_m = flight_state.list_distance_m[-1]
+
+    thermal_distance_m = (termal.distance_start_m + termal.distance_end_m) / 2
+    distance_to_termal_m = thermal_distance_m - last_node_distance_m
+    time_step_s = distance_to_termal_m / aircraft_model.velocity_max_m_s
+
+    # print(f"Simulating progress to termal {distance_to_termal_m} m at {time_step_s} s")
+
+    node_time_s = last_node_time_s + time_step_s
+    node_distance_m = last_node_distance_m + aircraft_model.velocity_max_m_s * time_step_s
+    node_altitude_m = last_node_altitude_m + aircraft_model.sink_max_m_s * time_step_s
+    is_landed = False
+
+    # Check if we've max flight time
+    if node_time_s >= flight_conditions.landing_time_s:
+        # Hacky
+        is_landed = True
+
+    # check if we are at max flight distance
+    if node_distance_m >= flight_conditions.distance_max_m:
+        # Hacky
+        is_landed = True
+
+    # check if we are on ground
+    if node_altitude_m <= 0:
+        node_altitude_m = 0
+        # Hacky
+        is_landed = True
+
+    # add the flight to the state
+    flight_state.list_time_s.append(node_time_s)
+    flight_state.list_distance_m.append(node_distance_m)
+    flight_state.list_altitude_m.append(node_altitude_m)
+    flight_state.is_landed = is_landed
+
+    # if we have not landed yetthen add one second of lift to the state so the policy can decide to use termal
+    if not is_landed:
+        flight_state.list_time_s.append(node_time_s + 1)
+        flight_state.list_distance_m.append(node_distance_m)
+        flight_state.list_altitude_m.append(node_altitude_m + termal.net_climb_m_s * 1)
+        flight_state.is_landed = False
+
+
+def simulate_flight(
+    flight_conditions: FlightConditions,
+    aircraft_model: AircraftModel,
+    policy: FlightPolicy,
+    termal_time_step_s: float = 1.0,
+) -> tuple[FlightState, list[Termal]]:
+    termals = flight_conditions.sample_termals()
+    termal_index = 0
+
     time_s = flight_conditions.take_off_time_s
+    # add initial state
     flight_state = FlightState(
         list_time_s=[time_s],
         list_altitude_m=[flight_conditions.take_off_altitude_m],
         list_distance_m=[0],
-        list_termal_net_rise_current_m_s=[0],
-        is_landed=False,)
+        list_termal_net_climb_current_m_s=[0],
+        is_landed=False,
+    )
 
-    while True:
-
-        # sample a termal
-        termal = flight_conditions.sample_termal()
-        flight_action = flight_policy.get_flight_action(flight_state, aircraft_model)
-        if flight_action.use_termal:
-            print("Use termal")
-            simulate_termal( flight_conditions, aircraft_model, flight_state, flight_action, termal)
-            print(f"Time: {flight_state.list_time_s[-1]} Distance: {flight_state.list_distance_m[-1]} Altitude: {flight_state.list_altitude_m[-1]}")
-
-        if not flight_state.is_landed:
-            print("Use progress")
-            simulate_progress(flight_conditions, aircraft_model, flight_state,flight_action, termal)
-            print(f"Time: {flight_state.list_time_s[-1]} Distance: {flight_state.list_distance_m[-1]} Altitude: {flight_state.list_altitude_m[-1]}")
-
-        else:
-            print("Landed")
+    # TODO in the futere we might want to make steps along this path rather than just jumping to the next termal to do some best glide stuff
+    while not flight_state.is_landed:
+        # if there are no more termals we land
+        if termal_index >= len(termals):
+            flight_state.is_landed = True  # TODO we should glide to out
             break
-    return flight_state
+        # get the next termal
+        next_termal = termals[termal_index]
+        simulate_progress_to_termal(flight_conditions, aircraft_model, flight_state, next_termal)
+        while policy.use_termal(flight_state, aircraft_model):
+            simulate_termal(
+                flight_conditions, aircraft_model, flight_state, next_termal, termal_time_step_s
+            )
+        termal_index += 1
+    return flight_state, termals
+
+
+def simulate_flight_many(
+    flight_conditions: FlightConditions,
+    aircraft_model: AircraftModel,
+    policy: FlightPolicy,
+    flight_count: int,
+    termal_time_step_s: float = 1.0,
+) -> tuple[list[float], list[float]]:
+    flight_distances = []
+    flight_durations = []
+    for _ in tqdm(range(flight_count)):
+        flight_state, _ = simulate_flight(
+            flight_conditions, aircraft_model, policy, termal_time_step_s
+        )
+        flight_distances.append(flight_state.list_distance_m[-1])
+        flight_durations.append(flight_state.list_time_s[-1])
+    return flight_distances, flight_durations
