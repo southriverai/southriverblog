@@ -53,6 +53,7 @@ ignore = [
     "PLR0913", # Too many arguments
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
+    "ARG002" #unused arguments
 ]
 
 # Set the maximum line length
