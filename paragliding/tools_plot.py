@@ -1,15 +1,116 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
-from paragliding.model import AircraftModel, FlightConditions, FlightPolicy, FlightState, Termal
+from paragliding.experiment import ExperimentOutput, ExperimentOutputBatch
+from paragliding.model import (
+    AircraftModel,
+    FlightConditions,
+)
 
 
-def plot_flight_hists(flight_distances: list[float], flight_durations: list[float]):
+def plot_flight_hists(experiment_result_baches: list[ExperimentOutputBatch], labels: list[str]):
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-    axes[0].hist(flight_distances, bins=20)
+    for experiment_output_batch, label in zip(experiment_result_baches, labels):
+        print(label)
+        distances_km = []
+        durations_s = []
+        for experiment_output in experiment_output_batch.list_experiment_outputs:
+            distances_km.append(experiment_output.flight_state.list_distance_m[-1] / 1000.0)
+            durations_s.append(experiment_output.flight_state.list_time_s[-1])
+
+        median_distance = np.percentile(distances_km, 50)  # round to 2 decimal places
+        median_distance = round(median_distance, 2)
+        p90_distance = np.percentile(distances_km, 90)
+        p90_distance = round(p90_distance, 2)
+        print("p50 distance", median_distance)
+        print("p90 distance", p90_distance)
+        axes[0].hist(
+            distances_km,
+            bins=20,
+            label=label,
+            alpha=0.7,
+        )
+        axes[1].hist(
+            durations_s,
+            bins=20,
+            label=label,
+            alpha=0.7,
+        )
     axes[0].set_xlabel("Distance (km)")
     axes[0].set_ylabel("Frequency")
     axes[0].set_title("Distance Distribution")
-    axes[1].hist(flight_durations, bins=20)
+
+    axes[1].set_xlabel("Duration (s)")
+    axes[1].set_ylabel("Frequency")
+    axes[1].set_title("Duration Distribution")
+    axes[0].legend()
+    axes[1].legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_flight_hists_2(experiment_result_baches: list[ExperimentOutputBatch], labels: list[str]):
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+    # First pass: collect all data to determine bin ranges
+    all_distances_km = []
+    all_durations_s = []
+    for experiment_output_batch in experiment_result_baches:
+        for experiment_output in experiment_output_batch.list_experiment_outputs:
+            all_distances_km.append(experiment_output.flight_state.list_distance_m[-1] / 1000.0)
+            all_durations_s.append(experiment_output.flight_state.list_time_s[-1])
+
+    # Create bins based on all data
+    num_bins = 20
+    _, distance_bins = np.histogram(all_distances_km, bins=num_bins)  # Get bin edges
+    _, duration_bins = np.histogram(all_durations_s, bins=num_bins)  # Get bin edges
+
+    # Second pass: plot histograms using the same bins
+    for experiment_output_batch, label in zip(experiment_result_baches, labels):
+        print(label)
+        distances_km = []
+        durations_s = []
+        for experiment_output in experiment_output_batch.list_experiment_outputs:
+            distances_km.append(experiment_output.flight_state.list_distance_m[-1] / 1000.0)
+            durations_s.append(experiment_output.flight_state.list_time_s[-1])
+        average_distance = np.mean(distances_km)  # round to 2 decimal places
+        average_distance = round(average_distance, 2)
+        p90_distance = np.percentile(distances_km, 90)
+        p90_distance = round(p90_distance, 2)
+        print("average distance", average_distance)
+        print("p90 distance", p90_distance)
+        axes[0].hist(
+            distances_km,
+            bins=distance_bins,
+            label=label,
+            alpha=0.7,
+        )
+        axes[1].hist(
+            durations_s,
+            bins=duration_bins,
+            label=label,
+            alpha=0.7,
+        )
+    axes[0].set_xlabel("Distance (km)")
+    axes[0].set_ylabel("Frequency")
+    axes[0].set_title("Distance Distribution")
+
+    axes[1].set_xlabel("Duration (s)")
+    axes[1].set_ylabel("Frequency")
+    axes[1].set_title("Duration Distribution")
+    axes[0].legend()
+    axes[1].legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_flight_hist(experiment_output: ExperimentOutput):
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+    axes[0].hist(experiment_output.flight_state.list_distance_m, bins=20)
+    axes[0].set_xlabel("Distance (km)")
+    axes[0].set_ylabel("Frequency")
+    axes[0].set_title("Distance Distribution")
+    axes[1].hist(experiment_output.flight_state.list_time_s, bins=20)
     axes[1].set_xlabel("Duration (s)")
     axes[1].set_ylabel("Frequency")
     axes[1].set_title("Duration Distribution")
@@ -18,11 +119,11 @@ def plot_flight_hists(flight_distances: list[float], flight_durations: list[floa
 
 
 def plot_flight(
-    flight_state: FlightState,
-    termals: list[Termal],
+    experiment_result: ExperimentOutput,
 ):
     fig, axes = plt.subplots(3, 1, figsize=(12, 8))
-
+    flight_state = experiment_result.flight_state
+    termals = experiment_result.termals
     # Convert distances to kilometers
     distance_km = [d / 1000.0 for d in flight_state.list_distance_m]
     distance_max_km = flight_state.list_distance_m[-1] / 1000.0
@@ -75,13 +176,6 @@ def plot_flight(
     axes[2].set_ylim(bottom=0)
     axes[2].grid(True, alpha=0.3)
     axes[2].legend()
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_flights(list_flight_states: list[FlightState], list_flight_policies: list[FlightPolicy]):
-    fig, axes = plt.subplots(3, 1, figsize=(15, 5))
 
     plt.tight_layout()
     plt.show()

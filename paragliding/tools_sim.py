@@ -1,6 +1,13 @@
 from tqdm import tqdm
 
-from paragliding.model import AircraftModel, FlightConditions, FlightPolicy, FlightState, Termal
+from paragliding.experiment import ExperimentOutput, ExperimentOutputBatch
+from paragliding.flight_policy import FlightPolicyBase
+from paragliding.model import (
+    AircraftModel,
+    FlightConditions,
+    FlightState,
+    Termal,
+)
 
 
 def simulate_termal(
@@ -91,9 +98,9 @@ def simulate_progress_to_termal(
 def simulate_flight(
     flight_conditions: FlightConditions,
     aircraft_model: AircraftModel,
-    policy: FlightPolicy,
+    policy: FlightPolicyBase,
     termal_time_step_s: float = 1.0,
-) -> tuple[FlightState, list[Termal]]:
+) -> ExperimentOutput:
     termals = flight_conditions.sample_termals()
     termal_index = 0
 
@@ -121,22 +128,23 @@ def simulate_flight(
                 flight_conditions, aircraft_model, flight_state, next_termal, termal_time_step_s
             )
         termal_index += 1
-    return flight_state, termals
+    return ExperimentOutput(
+        flight_state=flight_state,
+        termals=termals,
+    )
 
 
 def simulate_flight_many(
     flight_conditions: FlightConditions,
     aircraft_model: AircraftModel,
-    policy: FlightPolicy,
+    policy: FlightPolicyBase,
     flight_count: int,
     termal_time_step_s: float = 1.0,
-) -> tuple[list[float], list[float]]:
-    flight_distances = []
-    flight_durations = []
+) -> ExperimentOutputBatch:
+    list_experiment_results: list[ExperimentOutput] = []
     for _ in tqdm(range(flight_count)):
-        flight_state, _ = simulate_flight(
+        experiment_result = simulate_flight(
             flight_conditions, aircraft_model, policy, termal_time_step_s
         )
-        flight_distances.append(flight_state.list_distance_m[-1])
-        flight_durations.append(flight_state.list_time_s[-1])
-    return flight_distances, flight_durations
+        list_experiment_results.append(experiment_result)
+    return ExperimentOutputBatch(list_experiment_outputs=list_experiment_results)

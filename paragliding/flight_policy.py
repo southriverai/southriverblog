@@ -1,9 +1,12 @@
+import hashlib
 from abc import ABC, abstractmethod
+
+import numpy as np
 
 from paragliding.model import AircraftModel, FlightState
 
 
-class FlightPolicy(ABC):
+class FlightPolicyBase(ABC):
     policy_name: str
 
     def __init__(self, policy_name: str):
@@ -13,8 +16,11 @@ class FlightPolicy(ABC):
     def use_termal(self, flight_state: FlightState, aircraft_model: AircraftModel) -> bool:
         pass
 
+    def get_hash(self) -> str:
+        return hashlib.sha256(self.policy_name.encode()).hexdigest()
 
-class FlightPolicyNeverTermal(FlightPolicy):
+
+class FlightPolicyNeverTermal(FlightPolicyBase):
     def __init__(self):
         super().__init__(policy_name="NeverTermal")
 
@@ -26,7 +32,7 @@ class FlightPolicyNeverTermal(FlightPolicy):
         return False
 
 
-class FlightPolicyAlwaysTermal(FlightPolicy):
+class FlightPolicyAlwaysTermal(FlightPolicyBase):
     def __init__(self):
         super().__init__(policy_name="AlwaysTermal")
 
@@ -45,7 +51,7 @@ class FlightPolicyAlwaysTermal(FlightPolicy):
             return False
 
 
-class FlightPolicyThreeZones(FlightPolicy):
+class FlightPolicyThreeZones(FlightPolicyBase):
     def __init__(self, progress_quantile: float, lift_zone_quantile: float):
         super().__init__(policy_name=f"ThreeZones {progress_quantile} {lift_zone_quantile}")
         self.progress_quantile = progress_quantile

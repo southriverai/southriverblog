@@ -1,9 +1,12 @@
+from pathlib import Path
+
+from paragliding.flight_policy import (
+    FlightPolicyThreeZones,
+)
+from paragliding.flight_policy_neural import FlightPolicyNeuralNetwork
 from paragliding.model import (
     AircraftModel,
     FlightConditions,
-    FlightPolicyAlwaysTermal,
-    FlightPolicyNeverTermal,
-    FlightPolicyThreeZones,
 )
 from paragliding.tools_plot import plot_flight
 from paragliding.tools_sim import simulate_flight
@@ -28,14 +31,22 @@ aircraft_model = AircraftModel(
     sink_max_m_s=-1,
 )
 
-flight_policy_nt = FlightPolicyNeverTermal()
-flight_policy_at = FlightPolicyAlwaysTermal()
+# flight_policy_nt = FlightPolicyNeverTermal()
+# flight_policy_at = FlightPolicyAlwaysTermal()
 flight_policy_tn = FlightPolicyThreeZones(0.9, 0.5)
-flight_state, termals = simulate_flight(
+
+model_path = Path("data", "database_model", "neural_policy.pth")
+# make sure partent dir exists
+model_path.parent.mkdir(parents=True, exist_ok=True)
+flight_policy_nn = FlightPolicyNeuralNetwork(
+    model_path=model_path,
+    threshold=0.8,
+)
+experiment_result = simulate_flight(
     flight_conditions,
     aircraft_model,
-    flight_policy_tn,
+    flight_policy_nn,
     termal_time_step_s=10,
 )
-# plot_polar(aircraft_model)
-plot_flight(flight_state, termals)
+
+plot_flight(experiment_result)

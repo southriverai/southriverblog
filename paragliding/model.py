@@ -1,7 +1,7 @@
 from typing import Any
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class FlightAction(BaseModel):
@@ -34,7 +34,7 @@ class FlightState(BaseModel):
     list_altitude_m: list[float]
     list_distance_m: list[float]
     is_landed: bool
-    cache: dict[str, Any] = {}
+    cache: dict[str, Any] = Field(default_factory=dict, exclude=True)  # no serialization
 
     def current_climb_m_s(self) -> float:
         if len(self.list_altitude_m) < 2:
@@ -58,6 +58,24 @@ class FlightState(BaseModel):
         )
         self.cache[node_index] = node_climb_m_s
         return node_climb_m_s
+
+    def all_climbs(self) -> list[float]:
+        """
+        Get all climb rates from all nodes (not just thermal climbs).
+        Returns list of climb rates in m/s for each time step.
+        """
+        climbs = []
+        if len(self.list_time_s) < 2:
+            return climbs
+        
+        for i in range(1, len(self.list_time_s)):
+            climb_m = self.list_altitude_m[i] - self.list_altitude_m[i - 1]
+            time_diff = self.list_time_s[i] - self.list_time_s[i - 1]
+            if time_diff > 0:
+                climb_m_s = climb_m / time_diff
+                climbs.append(climb_m_s)
+        
+        return climbs
 
     def termal_climbs(self) -> list[float]:
         # merges all consequetive nodes with climb and produces one average number for each termal
