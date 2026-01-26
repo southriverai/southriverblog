@@ -4,10 +4,8 @@ from paragliding.flight_policy import (
     FlightPolicyThreeZones,
 )
 from paragliding.flight_policy_neural import FlightPolicyNeuralNetwork
-from paragliding.model import (
-    AircraftModel,
-    FlightConditions,
-)
+from paragliding.flight_conditions import FlightConditions
+from paragliding.model import AircraftModel
 from paragliding.tools_plot import plot_flight
 from paragliding.tools_sim import simulate_flight
 

@@ -1,4 +1,4 @@
-from paragliding.model import FlightConditions
+from paragliding.flight_conditions import FlightConditions
 from paragliding.tools_plot import plot_flight_conditions
 
 flight_conditions = FlightConditions(

@@ -40,9 +40,7 @@ class ThermalPolicyNetwork(nn.Module):
         for hidden_size in hidden_sizes:
             # Ensure hidden_size is an integer
             if not isinstance(hidden_size, int):
-                raise TypeError(
-                    f"hidden_size must be an integer, got {type(hidden_size)}: {hidden_size}"
-                )
+                raise TypeError(f"hidden_size must be an integer, got {type(hidden_size)}: {hidden_size}")
             layers.append(nn.Linear(prev_size, hidden_size))
             layers.append(nn.ReLU())
             layers.append(nn.Dropout(dropout))
@@ -136,7 +134,9 @@ class FlightPolicyNeuralNetwork(FlightPolicyBase):
                 nn.init.zeros_(module.bias)
 
     def _extract_features(
-        self, flight_state: FlightState, aircraft_model: AircraftModel
+        self,
+        flight_state: FlightState,
+        aircraft_model: AircraftModel,
     ) -> np.ndarray:
         """
         Extract features from flight state.
@@ -155,9 +155,7 @@ class FlightPolicyNeuralNetwork(FlightPolicyBase):
         if len(past_climbs) == 0:
             deciles = [0.0] * 10
         else:
-            deciles = [
-                np.quantile(past_climbs, q / 10.0) for q in range(1, 11)
-            ]  # 10th, 20th, ..., 100th percentile
+            deciles = [np.quantile(past_climbs, q / 10.0) for q in range(1, 11)]  # 10th, 20th, ..., 100th percentile
 
         # Current altitude (normalized by starting altitude)
         if len(flight_state.list_altitude_m) > 0:
@@ -179,9 +177,7 @@ class FlightPolicyNeuralNetwork(FlightPolicyBase):
             normalized_time = 0.0
 
         # Combine all features
-        features = np.array(
-            [*deciles, normalized_altitude, current_lift, normalized_time], dtype=np.float32
-        )
+        features = np.array([*deciles, normalized_altitude, current_lift, normalized_time], dtype=np.float32)
 
         return features
 
@@ -231,10 +227,19 @@ class FlightPolicyNeuralNetwork(FlightPolicyBase):
         lr: float,
     ) -> None:
         """Train model."""
-        X_tensor = torch.FloatTensor(X)
-        y_tensor = torch.FloatTensor(y).unsqueeze(
-            1
-        )  # Reshape to [batch_size, 1] to match output shape
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            print(f"Training on CUDA: {torch.cuda.get_device_name(0)}")
+        else:
+            device = torch.device("cpu")
+            print(
+                "CUDA not available — training on CPU. "
+                "Install PyTorch with CUDA: https://pytorch.org/get-started/locally/"
+            )
+
+        self.network.to(device)
+        X_tensor = torch.FloatTensor(X).to(device)
+        y_tensor = torch.FloatTensor(y).unsqueeze(1).to(device)
         self.network.train()
         optimizer = torch.optim.Adam(self.network.parameters(), lr=lr)
         criterion = torch.nn.BCELoss()
@@ -247,6 +252,7 @@ class FlightPolicyNeuralNetwork(FlightPolicyBase):
             optimizer.step()
             list_loss.append(loss.item())
         self.network.eval()
+        self.network.to("cpu")  # back to CPU for inference / save
         # plot loss function
         import matplotlib.pyplot as plt  # pyright: ignore[reportMissingImports]
 
@@ -255,46 +261,6 @@ class FlightPolicyNeuralNetwork(FlightPolicyBase):
         plt.ylabel("Loss")
         plt.title("Loss Function")
         plt.show()
-
-
-
-def train_rl(
-        self,
-        model_id:str,
-        policy,
-        simulator,
-        rollout_count:int,
-        simulations_per_rollout:int,
-        epochs_per_rollout: int,
-        learning_rate: float,
-    ) -> None:
-        """Train model."""
-        for rollout_idx in range(rollout_count):
-            simulation_results = simulator.simulate(policy, simulations_per_rollout)
-            input_matrix, output_matrix = policy.convert_to_matrixes(simulation_results)
-
-            input__tensor = torch.FloatTensor(input_matrix)
-            output_tensor = torch.FloatTensor(output_matrix)
-            policy.network.train()
-            optimizer = torch.optim.Adam(self.network.parameters(), lr=learning_rate)
-            criterion = torch.nn.BCELoss()
-            list_loss = []
-            for _ in tqdm(range(epochs_per_rollout)):
-                optimizer.zero_grad()
-                output = self.network(input__tensor)
-                loss = criterion(output, output_tensor)
-                loss.backward()
-                optimizer.step()
-                list_loss.append(loss.item())
-            self.network.eval()
-            # plot loss function
-            import matplotlib.pyplot as plt  # pyright: ignore[reportMissingImports]
-
-            plt.plot(list_loss)
-            plt.xlabel("Epoch")
-            plt.ylabel("Loss")
-            plt.title("Loss Function")
-            plt.show()
 
     def save(self) -> None:
         """Save model."""

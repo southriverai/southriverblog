@@ -1,11 +1,7 @@
 from pydantic import BaseModel, Field
 
-from paragliding.model import (
-    AircraftModel,
-    FlightConditions,
-    FlightState,
-    Termal,
-)
+from paragliding.flight_conditions import FlightConditions, Termal
+from paragliding.model import AircraftModel, FlightState
 
 
 class ExperimentInput(BaseModel):

@@ -2,10 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from paragliding.experiment import ExperimentOutput, ExperimentOutputBatch
-from paragliding.model import (
-    AircraftModel,
-    FlightConditions,
-)
+from paragliding.flight_conditions import FlightConditions
+from paragliding.model import AircraftModel
 
 
 def plot_flight_hists(experiment_result_baches: list[ExperimentOutputBatch], labels: list[str]):
@@ -195,7 +193,7 @@ def plot_flight_conditions(flight_conditions: FlightConditions):
     Uses the series_termal function to get blocky series for plotting.
     """
     # Get blocky series from series_termal function
-    distance_series, thermal_strength_series = flight_conditions.series_termal()
+    distance_series, thermal_strength_series = flight_conditions.series_termal_sampled()
 
     # Convert distance from meters to kilometers
     distance_series_km = [d / 1000.0 for d in distance_series]

@@ -6,11 +6,14 @@ Predicts: If we leave the current thermal, will we find stronger lift?
 from pathlib import Path
 
 import numpy as np
+import torch
 from tqdm import tqdm
 
+from paragliding.flight_conditions import FlightConditions
 from paragliding.flight_policy import FlightPolicyNeverTermal
 from paragliding.flight_policy_neural import FlightPolicyNeuralNetwork
-from paragliding.model import AircraftModel, FlightConditions, FlightState
+from paragliding.model import AircraftModel, FlightState
+from paragliding.simulator import Simulator
 from paragliding.tools_sim import simulate_flight
 
 
@@ -62,9 +65,7 @@ def generate_training_data(
             termal_distance_max_m=10000,
         )
         # Simulate a flight
-        experiment_output = simulate_flight(
-            flight_conditions, aircraft_model, policy, termal_time_step_s
-        )
+        experiment_output = simulate_flight(flight_conditions, aircraft_model, policy, termal_time_step_s)
 
         flight_state = experiment_output.flight_state
         termals = experiment_output.termals
@@ -80,13 +81,8 @@ def generate_training_data(
 
             # Calculate climb rate at this point
             if state_idx > 0:
-                climb_m = (
-                    flight_state.list_altitude_m[state_idx]
-                    - flight_state.list_altitude_m[state_idx - 1]
-                )
-                time_diff = (
-                    flight_state.list_time_s[state_idx] - flight_state.list_time_s[state_idx - 1]
-                )
+                climb_m = flight_state.list_altitude_m[state_idx] - flight_state.list_altitude_m[state_idx - 1]
+                time_diff = flight_state.list_time_s[state_idx] - flight_state.list_time_s[state_idx - 1]
                 if time_diff > 0:
                     climb_rate = climb_m / time_diff
                 else:
@@ -100,20 +96,13 @@ def generate_training_data(
                 current_distance = flight_state.list_distance_m[state_idx]
 
                 # Update current_termal_idx if we've moved to a new thermal
-                while (
-                    current_termal_idx < len(termals)
-                    and current_distance > termals[current_termal_idx].distance_end_m
-                ):
+                while current_termal_idx < len(termals) and current_distance > termals[current_termal_idx].distance_end_m:
                     current_termal_idx += 1
 
                 # Check if we're actually in a thermal location
                 if current_termal_idx < len(termals):
                     current_termal = termals[current_termal_idx]
-                    if (
-                        current_termal.distance_start_m
-                        <= current_distance
-                        <= current_termal.distance_end_m
-                    ):
+                    if current_termal.distance_start_m <= current_distance <= current_termal.distance_end_m:
                         # We're in a thermal - this is a decision point
                         # Check if there's a next thermal to compare
                         if current_termal_idx < len(termals) - 1:
@@ -125,9 +114,7 @@ def generate_training_data(
                             reached_next_thermal = False
 
                             # Look ahead through future states to see if we reach next thermal
-                            for future_idx in range(
-                                state_idx + 1, len(flight_state.list_distance_m)
-                            ):
+                            for future_idx in range(state_idx + 1, len(flight_state.list_distance_m)):
                                 if future_idx >= len(flight_state.list_distance_m):
                                     break
 
@@ -150,30 +137,20 @@ def generate_training_data(
                                 final_distance = flight_state.list_distance_m[-1]
                                 if final_distance < next_termal.distance_start_m:
                                     # Flight ended before reaching next thermal
-                                    final_altitude = (
-                                        flight_state.list_altitude_m[-1]
-                                        if len(flight_state.list_altitude_m) > 0
-                                        else 0
-                                    )
+                                    final_altitude = flight_state.list_altitude_m[-1] if len(flight_state.list_altitude_m) > 0 else 0
                                     if final_altitude <= 0:
                                         lands_before_next = True
 
                             # Create a snapshot of flight state at this point
                             snapshot_state = FlightState(
                                 list_time_s=flight_state.list_time_s[: state_idx + 1].copy(),
-                                list_altitude_m=flight_state.list_altitude_m[
-                                    : state_idx + 1
-                                ].copy(),
-                                list_distance_m=flight_state.list_distance_m[
-                                    : state_idx + 1
-                                ].copy(),
+                                list_altitude_m=flight_state.list_altitude_m[: state_idx + 1].copy(),
+                                list_distance_m=flight_state.list_distance_m[: state_idx + 1].copy(),
                                 is_landed=False,
                             )
 
                             # Extract features
-                            features = policy_neural._extract_features(
-                                snapshot_state, aircraft_model
-                            )
+                            features = policy_neural._extract_features(snapshot_state, aircraft_model)
 
                             # Label: 1 if next thermal is stronger AND we successfully reach it
                             # If we land before reaching next thermal, label as 0 (didn't find stronger lift)
@@ -181,11 +158,7 @@ def generate_training_data(
                                 label = 0.0  # Landed before reaching next thermal - didn't find stronger lift
                             elif reached_next_thermal:
                                 # Successfully reached next thermal location
-                                label = (
-                                    1.0
-                                    if next_termal.net_climb_m_s > current_termal.net_climb_m_s
-                                    else 0.0
-                                )
+                                label = 1.0 if next_termal.net_climb_m_s > current_termal.net_climb_m_s else 0.0
                             else:
                                 # Flight ended before reaching next thermal (but didn't crash)
                                 # This could be due to max time/distance - treat conservatively as 0
@@ -206,10 +179,17 @@ def generate_training_data(
     return X, y
 
 
-def save_training_data(X: np.ndarray, y: np.ndarray, filepath: str):
+def save_training_data(
+    path_file_training_data: Path,
+    X: np.ndarray,
+    y: np.ndarray,
+):
+    path_file_training_data = Path(path_file_training_data)
+    path_file_training_data.parent.mkdir(parents=True, exist_ok=True)
+
     """Save training data to file."""
-    np.savez(filepath, X=X, y=y)
-    print(f"Saved training data: {X.shape[0]} samples to {filepath}")
+    np.savez(path_file_training_data, X=X, y=y)
+    print(f"Saved training data: {X.shape[0]} samples to {path_file_training_data}")
 
 
 def load_training_data(filepath: str) -> tuple[np.ndarray, np.ndarray]:
@@ -226,7 +206,11 @@ def get_training_data() -> tuple[np.ndarray, np.ndarray]:
         X, y = load_training_data(path_file_training_data)
     else:
         X, y = generate_training_data()
-        save_training_data(X, y, path_file_training_data)
+        save_training_data(
+            path_file_training_data,
+            X,
+            y,
+        )
     return X, y
 
 
@@ -259,3 +243,40 @@ if __name__ == "__main__":
     # train model
     print("Training model...")
     model = train_model(X, y)
+
+
+def train_rl(
+    policy: FlightPolicyNeuralNetwork,
+    simulator: Simulator,
+    rollout_count: int,
+    simulations_per_rollout: int,
+    epochs_per_rollout: int,
+    learning_rate: float,
+) -> None:
+    """Train model."""
+    for rollout_idx in range(rollout_count):
+        simulation_results = simulator.simulate(policy, simulations_per_rollout)
+        input_matrix, output_matrix = policy.convert_to_matrixes(simulation_results)
+
+        input__tensor = torch.FloatTensor(input_matrix)
+        output_tensor = torch.FloatTensor(output_matrix)
+        policy.network.train()
+        optimizer = torch.optim.Adam(policy.network.parameters(), lr=learning_rate)
+        criterion = torch.nn.BCELoss()
+        list_loss = []
+        for _ in tqdm(range(epochs_per_rollout)):
+            optimizer.zero_grad()
+            output = policy.network(input__tensor)
+            loss = criterion(output, output_tensor)
+            loss.backward()
+            optimizer.step()
+            list_loss.append(loss.item())
+        policy.network.eval()
+        # plot loss function
+        import matplotlib.pyplot as plt  # pyright: ignore[reportMissingImports]
+
+        plt.plot(list_loss)
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Loss Function")
+        plt.show()

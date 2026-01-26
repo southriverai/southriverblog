@@ -54,11 +54,12 @@ ignore = [
     "PLR0913", # Too many arguments
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
-    "ARG002" #unused arguments
+    "ARG002", #unused arguments
+    "TRY003" # long message in except block
 ]
 
 # Set the maximum line length
-line-length = 100
+line-length = 140
 
 # Exclude common directories
 exclude = [

@@ -2,12 +2,8 @@ from tqdm import tqdm
 
 from paragliding.experiment import ExperimentOutput, ExperimentOutputBatch
 from paragliding.flight_policy import FlightPolicyBase
-from paragliding.model import (
-    AircraftModel,
-    FlightConditions,
-    FlightState,
-    Termal,
-)
+from paragliding.flight_conditions import FlightConditions, Termal
+from paragliding.model import AircraftModel, FlightState
 
 
 def simulate_termal(
@@ -110,7 +106,6 @@ def simulate_flight(
         list_time_s=[time_s],
         list_altitude_m=[flight_conditions.take_off_altitude_m],
         list_distance_m=[0],
-        list_termal_net_climb_current_m_s=[0],
         is_landed=False,
     )
 
