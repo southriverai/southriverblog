@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import os
 from typing import List, Literal, Optional, Tuple
 
 import requests
@@ -12,7 +13,7 @@ from dutch_politics.store.bytes_store_base import BytesStoreBase
 from dutch_politics.store.object_store_base import ObjectStoreBase
 from dutch_politics.store.store_provider_disk import StoreProviderDisk
 from dutch_politics.store.store_provider_s3 import StoreProviderS3
-import os
+
 logger = logging.getLogger(__name__)
 
 
@@ -97,9 +98,7 @@ def parse_search_results_soup(
     results: List[EntryReference] = []
 
     # find div with id "Publicaties"
-    publications_div: Optional[PageElement] = beautiful_soup.find(
-        "div", id="Publicaties"
-    )
+    publications_div: Optional[PageElement] = beautiful_soup.find("div", id="Publicaties")
 
     span_element: Optional[PageElement] = beautiful_soup.find("span", class_="h1__sub")
     if span_element:
@@ -116,17 +115,14 @@ def parse_search_results_soup(
         subtitle = publication_li.find("a", class_="result--subtitle").text
         # the first dd out of dl will be the publication date
         publication_date = (
-            publication_li.find("dl", class_="dl dl--publication")
-            .find_all("dd")[0]
-            .text
+            publication_li.find("dl", class_="dl dl--publication").find_all("dd")[0].text
         )
         content_link_element: Optional[PageElement] = publication_li.find(
             "h2", class_="result--title"
         ).find("a")  # type: ignore
         if content_link_element:
             content_url_html = (
-                "https://zoek.officielebekendmakingen.nl/"
-                + content_link_element["href"]
+                "https://zoek.officielebekendmakingen.nl/" + content_link_element["href"]
             )
         else:
             content_url_html = ""
@@ -136,8 +132,7 @@ def parse_search_results_soup(
         )
         if content_link_element:
             content_url_pdf = (
-                "https://zoek.officielebekendmakingen.nl/"
-                + content_link_element["href"]
+                "https://zoek.officielebekendmakingen.nl/" + content_link_element["href"]
             )
         else:
             content_url_pdf = ""
@@ -226,9 +221,7 @@ def build_index(
             print(f"Total entries: {len(all_references)} of {total_entries}")
             content_str = get_page_content(html_store, vergaderjaar, "handeling", page)
             beautiful_soup = BeautifulSoup(content_str, "html.parser")
-            references, total_entries, has_next = parse_search_results_soup(
-                beautiful_soup
-            )
+            references, total_entries, has_next = parse_search_results_soup(beautiful_soup)
             all_references.extend(references)
             if not has_next:
                 break
@@ -238,14 +231,10 @@ def build_index(
     index_store.mset([(index_id, index_bytes)])
 
 
-def load_index(
-    index_store: BytesStoreBase, index_id: str
-) -> Optional[EntryReferenceIndex]:
+def load_index(index_store: BytesStoreBase, index_id: str) -> Optional[EntryReferenceIndex]:
     index_bytes = index_store.mget([index_id])[0]
     if index_bytes:
-        index_object = EntryReferenceIndex.model_validate_json(
-            index_bytes.decode("utf-8")
-        )
+        index_object = EntryReferenceIndex.model_validate_json(index_bytes.decode("utf-8"))
         return index_object
     return None
 
@@ -283,13 +272,19 @@ if __name__ == "__main__":
     database_name = "database_ob"
     CONNECTION_STRING_OB_CACHE = os.getenv("CONNECTION_STRING_OB_CACHE")
     CONNECTION_STRING_OB_INDEX = os.getenv("CONNECTION_STRING_OB_INDEX")
-    html_store = StoreProviderS3(database_name, CONNECTION_STRING_OB_CACHE).get_bytes_store("html_cache")
-    index_store = StoreProviderS3(database_name, CONNECTION_STRING_OB_INDEX).get_bytes_store("index_store")
+    html_store = StoreProviderS3(database_name, CONNECTION_STRING_OB_CACHE).get_bytes_store(
+        "html_cache"
+    )
+    index_store = StoreProviderS3(database_name, CONNECTION_STRING_OB_INDEX).get_bytes_store(
+        "index_store"
+    )
     html_store_disk = StoreProviderDisk(
-        database_name, "data",
+        database_name,
+        "data",
     ).get_bytes_store("html_cache")
     index_store_disk = StoreProviderDisk(
-        database_name, "data",
+        database_name,
+        "data",
     ).get_bytes_store("index_store")
     # copy all entryis from the chache to the disk
     # list_keys = list(html_store.yield_keys())
@@ -299,10 +294,10 @@ if __name__ == "__main__":
     for key in tqdm(list_keys):
         index_store_disk.mset([(key, index_store.mget([key])[0])])
 
-
     path_dir_database = "data"
     entry_store = StoreProviderDisk(
-        "database_ob_entries", path_dir_database,
+        "database_ob_entries",
+        path_dir_database,
     ).get_object_store("entry_content", EntryContent)
 
     main(html_store, index_store, "index_2025-2021", entry_store)
