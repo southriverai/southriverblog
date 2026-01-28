@@ -14,6 +14,7 @@ class ExperimentInput(BaseModel):
 
 
 class ExperimentOutput(BaseModel):
+    aircraft_model: AircraftModel
     flight_state: FlightState
     termals: list[Termal]
 

@@ -57,7 +57,7 @@ select = [
     "RUF", # Ruff-specific rules
 ]
 ignore = [
-    "E501",  # Line too long (handled by formatter)
+    # E501 is not ignored - we enforce 140 char limit via max-line-length
     "PLR0913", # Too many arguments
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
@@ -86,6 +86,10 @@ quote-style = "double"
 indent-style = "space"
 # Respect magic trailing comma (don't skip them)
 skip-magic-trailing-comma = false
+
+[tool.ruff.lint.pycodestyle]
+# Set max-line-length for pycodestyle (E501) rule
+max-line-length = 140
 
 [tool.ruff.isort]
 # Use known-first-party for your package

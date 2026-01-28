@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from pydantic import BaseModel, Field
@@ -29,11 +29,31 @@ class AircraftModel(BaseModel):
     sink_max_m_s: float
 
 
+class FlightNode(BaseModel):
+    time_s: float
+    altitude_m: float
+    distance_m: float
+    is_landed: bool
+    use_thermal: bool
+
+
+class ActionNode(BaseModel):
+    use_thermal: bool
+
+
+class FlightState2(BaseModel):
+    flight_nodes: list[FlightNode]
+    action_nodes: list[ActionNode]
+
+    cache: dict[str, Any] = Field(default_factory=dict, exclude=True)  # no serialization
+
+
 class FlightState(BaseModel):
     list_time_s: list[float]
     list_altitude_m: list[float]
     list_distance_m: list[float]
-    is_landed: bool
+    list_use_thermal: list[bool]
+    status: Literal["flying", "out_of_time", "out_of_altitude"]
     cache: dict[str, Any] = Field(default_factory=dict, exclude=True)  # no serialization
 
     def current_climb_m_s(self) -> float:
@@ -53,9 +73,7 @@ class FlightState(BaseModel):
         if node_index >= len(self.list_time_s):
             return 0
         node_climb_m = self.list_altitude_m[node_index] - self.list_altitude_m[node_index - 1]
-        node_climb_m_s = node_climb_m / (
-            self.list_time_s[node_index] - self.list_time_s[node_index - 1]
-        )
+        node_climb_m_s = node_climb_m / (self.list_time_s[node_index] - self.list_time_s[node_index - 1])
         self.cache[node_index] = node_climb_m_s
         return node_climb_m_s
 
@@ -67,14 +85,14 @@ class FlightState(BaseModel):
         climbs = []
         if len(self.list_time_s) < 2:
             return climbs
-        
+
         for i in range(1, len(self.list_time_s)):
             climb_m = self.list_altitude_m[i] - self.list_altitude_m[i - 1]
             time_diff = self.list_time_s[i] - self.list_time_s[i - 1]
             if time_diff > 0:
                 climb_m_s = climb_m / time_diff
                 climbs.append(climb_m_s)
-        
+
         return climbs
 
     def termal_climbs(self) -> list[float]:
@@ -104,4 +122,3 @@ class FlightState(BaseModel):
             "node_index": node_index,
         }
         return termal_climbs
-

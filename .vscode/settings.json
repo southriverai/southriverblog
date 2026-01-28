@@ -9,10 +9,7 @@
     }
   },
   
-  // Ruff extension settings
-  "ruff.enable": true,
-  "ruff.organizeImports": true,
-  "ruff.fixAll": true,
-  "ruff.lint.enable": true,
-  "ruff.format.args": []
+  // Disable flake8 to use only ruff
+  "flake8.enabled": false,
+
 }

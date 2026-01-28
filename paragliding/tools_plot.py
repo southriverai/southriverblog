@@ -43,12 +43,13 @@ def plot_flight_hists(experiment_result_baches: list[ExperimentOutputBatch], lab
     axes[1].set_title("Duration Distribution")
     axes[0].legend()
     axes[1].legend()
+
     plt.tight_layout()
     plt.show()
 
 
 def plot_flight_hists_2(experiment_result_baches: list[ExperimentOutputBatch], labels: list[str]):
-    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
     # First pass: collect all data to determine bin ranges
     all_distances_km = []
@@ -77,27 +78,47 @@ def plot_flight_hists_2(experiment_result_baches: list[ExperimentOutputBatch], l
         p90_distance = round(p90_distance, 2)
         print("average distance", average_distance)
         print("p90 distance", p90_distance)
-        axes[0].hist(
+        axes[0, 0].hist(
             distances_km,
             bins=distance_bins,
             label=label,
             alpha=0.7,
         )
-        axes[1].hist(
+        axes[0, 1].hist(
             durations_s,
             bins=duration_bins,
             label=label,
             alpha=0.7,
         )
-    axes[0].set_xlabel("Distance (km)")
-    axes[0].set_ylabel("Frequency")
-    axes[0].set_title("Distance Distribution")
+    axes[0, 0].set_xlabel("Distance (km)")
+    axes[0, 0].set_ylabel("Frequency")
+    axes[0, 0].set_title("Distance Distribution")
 
-    axes[1].set_xlabel("Duration (s)")
-    axes[1].set_ylabel("Frequency")
-    axes[1].set_title("Duration Distribution")
-    axes[0].legend()
-    axes[1].legend()
+    axes[0, 1].set_xlabel("Duration (s)")
+    axes[0, 1].set_ylabel("Frequency")
+    axes[0, 1].set_title("Duration Distribution")
+    axes[0, 0].legend()
+    axes[0, 1].legend()
+
+    # Collect flight statuses for pie chart
+    status_counts = {}
+    for experiment_output_batch in experiment_result_baches:
+        for experiment_output in experiment_output_batch.list_experiment_outputs:
+            status = experiment_output.flight_state.status
+            status_counts[status] = status_counts.get(status, 0) + 1
+
+    # Create pie chart
+    statuses = list(status_counts.keys())
+    counts = list(status_counts.values())
+    # Use a more readable label format
+    labels_pie = [status.replace("_", " ").title() for status in statuses]
+    colors = plt.cm.Set3(np.linspace(0, 1, len(statuses)))
+    axes[1, 0].pie(counts, labels=labels_pie, autopct="%1.1f%%", startangle=90, colors=colors)
+    axes[1, 0].set_title("Flight Status Distribution")
+
+    # Hide the unused subplot
+    axes[1, 1].axis("off")
+
     plt.tight_layout()
     plt.show()
 
@@ -144,9 +165,7 @@ def plot_flight(
     axes[1].grid(True)
 
     # plot flight conditions (thermal strength vs distance)
-    distance_series, thermal_strength_series = FlightConditions.series_termal(
-        termals, flight_state.list_distance_m[-1]
-    )
+    distance_series, thermal_strength_series = FlightConditions.series_termal(termals, flight_state.list_distance_m[-1])
     # Convert distance from meters to kilometers for better readability
     distance_series_km = [d / 1000.0 for d in distance_series]
 
