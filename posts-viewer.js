@@ -299,13 +299,16 @@ class PostsViewer {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
-        // Find all images: centre them and render at full resolution
+        // Find all images: centre them, apply styling, set title from alt for hover tooltip
         const images = tempDiv.querySelectorAll('img');
         images.forEach(img => {
             img.style.display = 'block';
             img.style.margin = '20px auto';
             img.style.borderRadius = '8px';
             img.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+            if (img.alt && img.alt.trim()) {
+                img.title = img.alt;
+            }
         });
 
         // Wrap tables for full width and mobile-friendly horizontal scroll

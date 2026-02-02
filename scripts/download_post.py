@@ -3,6 +3,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import requests
+
 from southriverblog.model.tools_post import download_post
 
 
@@ -113,7 +115,33 @@ if __name__ == "__main__":
         action="store_true",
         help="Only refresh manifest.json from post_markdown/*.md (no downloads).",
     )
+    parser.add_argument(
+        "--zip-inspect",
+        action="store_true",
+        help="Download zip export for first doc, extract to post_zip_export/, and list contents.",
+    )
     args = parser.parse_args()
+
+    if args.zip_inspect:
+        import io
+        import zipfile
+
+        document_id = "1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo"
+        url = f"https://docs.google.com/document/d/{document_id}/export?format=zip"
+        print(f"Downloading zip from {url}...")
+        response = requests.get(url)
+        response.raise_for_status()
+        out_dir = Path("post_zip_export")
+        out_dir.mkdir(exist_ok=True)
+        with zipfile.ZipFile(io.BytesIO(response.content), "r") as zf:
+            zf.extractall(out_dir)
+            print(f"Extracted to {out_dir.absolute()}/")
+            print("Contents:")
+            for name in sorted(zf.namelist()):
+                info = zf.getinfo(name)
+                size = f"{info.file_size} bytes" if not info.is_dir() else "(dir)"
+                print(f"  {name} {size}")
+        sys.exit(0)
 
     if args.manifest_only:
         update_manifest()
