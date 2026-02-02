@@ -182,21 +182,21 @@ def main() -> int:
 
     git_add_all()
 
-    if not has_staged_changes():
-        print("No changes to commit.")
-        return 0
+    if has_staged_changes():
+        staged = get_staged_diff()
 
-    staged = get_staged_diff()
-
-    if args.no_ai:
-        message = get_fallback_commit_message()
-    else:
-        api_key = os.environ.get("OPENAI_API_KEY")
-        message = generate_commit_message_with_ai(staged, api_key)
-        if not message:
+        if args.no_ai:
             message = get_fallback_commit_message()
+        else:
+            api_key = os.environ.get("OPENAI_API_KEY")
+            message = generate_commit_message_with_ai(staged, api_key)
+            if not message:
+                message = get_fallback_commit_message()
 
-    git_commit(message)
+        git_commit(message)
+    else:
+        print("No changes to commit, but will still push tag to trigger page regeneration.")
+
     git_tag(args.tag)
     git_push(tag_name=args.tag)
 
