@@ -147,13 +147,14 @@ def git_tag(tag_name: str, force: bool = True) -> None:
     run(cmd)
 
 
-def git_push(with_tags: bool = True) -> None:
+def git_push(with_tags: bool = True, tag_name: str | None = None) -> None:
     """Push current branch and tags."""
     print("Pushing branch...")
     run(["git", "push"])
-    if with_tags:
+    if with_tags and tag_name:
         print("Pushing tags...")
-        run(["git", "push", "--tags"])
+        # Force-push the tag so we can update it on the remote (e.g. generate-pages)
+        run(["git", "push", "origin", f"+refs/tags/{tag_name}"])
 
 
 def main() -> int:
@@ -197,7 +198,7 @@ def main() -> int:
 
     git_commit(message)
     git_tag(args.tag)
-    git_push()
+    git_push(tag_name=args.tag)
 
     print("Done.")
     return 0
