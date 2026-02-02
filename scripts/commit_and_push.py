@@ -12,6 +12,9 @@ import sys
 
 GENERATE_PAGES_TAG = "generate-pages"
 
+# Use UTF-8 for git output so Windows (cp1252) doesn't fail on non-ASCII
+_SUBPROCESS_KW = {"encoding": "utf-8", "errors": "replace"}
+
 
 def run(cmd: list[str], check: bool = True, capture: bool = False) -> subprocess.CompletedProcess:
     """Run a command and return the result."""
@@ -20,6 +23,7 @@ def run(cmd: list[str], check: bool = True, capture: bool = False) -> subprocess
         check=check,
         capture_output=capture,
         text=True,
+        **_SUBPROCESS_KW,
     )
     return result
 
@@ -35,7 +39,9 @@ def has_staged_changes() -> bool:
     result = subprocess.run(
         ["git", "diff", "--cached", "--quiet"],
         capture_output=True,
+        text=True,
         check=False,
+        **_SUBPROCESS_KW,
     )
     return result.returncode != 0
 
@@ -47,6 +53,7 @@ def get_staged_diff() -> str:
         capture_output=True,
         text=True,
         check=False,
+        **_SUBPROCESS_KW,
     )
     stat = result.stdout or ""
     result = subprocess.run(
@@ -54,6 +61,7 @@ def get_staged_diff() -> str:
         capture_output=True,
         text=True,
         check=False,
+        **_SUBPROCESS_KW,
     )
     diff = result.stdout or ""
     # Truncate very large diffs to avoid token limits
@@ -109,6 +117,7 @@ def get_fallback_commit_message() -> str:
         capture_output=True,
         text=True,
         check=False,
+        **_SUBPROCESS_KW,
     )
     lines = (result.stdout or "").strip().splitlines()
     if not lines:
