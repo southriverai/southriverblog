@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 from southriverblog.model.tools_post import download_post
@@ -7,23 +8,40 @@ from southriverblog.model.tools_post import download_post
 def update_manifest():
     """
     Update manifest.json to include all markdown files in post_markdown directory.
+    Uses only filenames (e.g. "post.md") so the site can load post_markdown/<filename>.
     """
     manifest_path = Path("post_markdown") / "manifest.json"
+    post_dir = Path("post_markdown")
 
-    # Get all markdown files in the directory
-    if Path("post_markdown").exists():
-        all_files = [f for f in Path("post_markdown").iterdir() if f.endswith(".md") and f.is_file()]
-        # Sort alphabetically for consistent ordering
-        all_files.sort()
+    if not post_dir.exists():
+        return
 
-        # Write manifest.json
-        manifest = {"files": all_files}
-        with manifest_path.open("w", encoding="utf-8") as f:
-            json.dump(manifest, f, indent=2)
-        print(f"Updated manifest.json with {len(all_files)} files")
+    # Collect filenames only so manifest works with static hosting (post_markdown/<name>)
+    all_files = [f.name for f in post_dir.iterdir() if f.is_file() and f.suffix.lower() == ".md"]
+    all_files.sort()
+
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest = {"files": all_files}
+    with manifest_path.open("w", encoding="utf-8") as out:
+        json.dump(manifest, out, indent=2)
+    print(f"Updated manifest.json with {len(all_files)} files")
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Download posts and/or update manifest.")
+    parser.add_argument(
+        "--manifest-only",
+        action="store_true",
+        help="Only refresh manifest.json from post_markdown/*.md (no downloads).",
+    )
+    args = parser.parse_args()
+
+    if args.manifest_only:
+        update_manifest()
+        sys.exit(0)
+
     document_ids = []
     document_ids.append("1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo")
     document_ids.append("1yiZzJee9BW_HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro")
@@ -34,5 +52,5 @@ if __name__ == "__main__":
         path = download_post(document_id)
         print(f"Downloaded: {path}")
 
-    # Update manifest.json after all downloads are complete
+    # Refresh manifest again after downloads in case new files were added
     update_manifest()
