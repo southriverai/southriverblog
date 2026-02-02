@@ -8,7 +8,7 @@ Let us start at the beginning. Nickel and MacCready’s theorem for optimal flig
 
 **![][image1]**
 
-For example: I am gliding along at a leisurely 10m/s ($V\_{gl}$) while falling (sinking) at 1m/s ($V\_{s}$). The average climb I manage to accomplish in thermals that day is also 1 m/s ($V\_{c}$) .This means for every second spent flying forward I am going to have to spend a second going up in a thermal. This halves my effective cross country \-speed ($V\_{xc}$). More formally:
+For example: I am gliding along at a leisurely 10m/s ($V\_{gl}$) while falling (sinking) at 1m/s ($V\_{s}$). The average climb I manage to accomplish in thermals that day is also 1 m/s ($V\_{c}$) .This means for every second spent flying forward I am going to have to spend a second going up in a thermal. This halves my effective cross country speed ($V\_{xc}$). More formally:
 
 $$  
 V\_{xc} \= \\frac{V\_{gl} \\cdot w\_c}{V\_{c} \+ V\_{s}}  
@@ -96,8 +96,8 @@ A final limitation is that atmospherics, a thermal, is not just a 200m wide unif
 
 A few weeks ago a little bird landed on my window still and deposited in my S3 bucket over a million hours of paragliding flight time from across the globe. In this data pilots flew an estimated 2 million thermals and some of them several times in a single day. I think this is enough data to create an accurate model of, in the very least, conventional thermal lift and use that to make more realistic simulations. Stay tuned for more flying machine learning\!
 
-[image1]: images/1sdVTjVopYT-bKBhNCjK0Qc8PYZhKL7pa_qbuI6LG_R4/image4.png
+[image1]: images/1sdVTjVopYT-bKBhNCjK0Qc8PYZhKL7pa-qbuI6LG-R4/image3.png
 
-[image2]: images/1sdVTjVopYT-bKBhNCjK0Qc8PYZhKL7pa_qbuI6LG_R4/image1.png
+[image2]: images/1sdVTjVopYT-bKBhNCjK0Qc8PYZhKL7pa-qbuI6LG-R4/image1.png
 
-[image3]: images/1sdVTjVopYT-bKBhNCjK0Qc8PYZhKL7pa_qbuI6LG_R4/image2.png
+[image3]: images/1sdVTjVopYT-bKBhNCjK0Qc8PYZhKL7pa-qbuI6LG-R4/image2.png

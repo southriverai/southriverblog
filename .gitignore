@@ -2,4 +2,3 @@
 data/*
 .env
 result*
-post_zip_export/

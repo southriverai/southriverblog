@@ -17,10 +17,10 @@ Some people such as Thomas Piketty argue that this reduction in political and ec
 
 Across the world governments are narrowing the set of individuals who share power and dismantling or subverting institutions they do not control directly. Deprived of their bargaining power the middle class lacks the heft to push back. While full on autocracy is not yet a reality for most of the world's population, growing polarization and a lack of broad centrist voting options is. Funny enough it is also that division that is preventing us from organizing to stop the processes that are about to take away the life we so cherish. If we could agree on what is happening we can change direction. Unfortunately both the path we are on and the actions to correct it are heavily contested. Whatever comes after the equality pulse, it is unlikely to include a middle class, if you are in it, enjoy the *equality pulse* while it lasts.
 
-[image1]: images/1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo/image3.png
+[image1]: images/1DOQ6at-Ge8-zPbicYCqxx7cS3-bA-8dC-SRulZ-3Qoo/image3.png
 
-[image2]: images/1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo/image1.png
+[image2]: images/1DOQ6at-Ge8-zPbicYCqxx7cS3-bA-8dC-SRulZ-3Qoo/image1.png
 
-[image3]: images/1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo/image2.png
+[image3]: images/1DOQ6at-Ge8-zPbicYCqxx7cS3-bA-8dC-SRulZ-3Qoo/image2.png
 
-[image4]: images/1DOQ6at_Ge8-zPbicYCqxx7cS3_bA_8dC_SRulZ-3Qoo/image4.png
+[image4]: images/1DOQ6at-Ge8-zPbicYCqxx7cS3-bA-8dC-SRulZ-3Qoo/image4.png

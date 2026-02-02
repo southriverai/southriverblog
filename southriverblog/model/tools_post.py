@@ -31,9 +31,14 @@ def _img_order_from_html(html: str) -> list[str]:
     return re.findall(r'src="images/([^"]+)"', html)
 
 
+def _sanitize_doc_id_for_path(document_id: str) -> str:
+    """Replace underscores with hyphens so URLs don't trigger markdown emphasis parsing."""
+    return document_id.replace("_", "-")
+
+
 def _download_zip_images(document_id: str, images_dir: Path) -> dict[str, str]:
     """
-    Download zip export, extract images to images/{document_id}/.
+    Download zip export, extract images to images/{sanitized_doc_id}/.
     Uses HTML to determine image order (markdown image1 = first img in doc, etc.).
     Returns mapping of image ref (e.g. image1) -> filename (e.g. image3.png).
     """
@@ -41,7 +46,8 @@ def _download_zip_images(document_id: str, images_dir: Path) -> dict[str, str]:
     response = requests.get(url)
     response.raise_for_status()
 
-    out_dir = images_dir / document_id
+    safe_id = _sanitize_doc_id_for_path(document_id)
+    out_dir = images_dir / safe_id
     out_dir.mkdir(parents=True, exist_ok=True)
     ref_to_file: dict[str, str] = {}
     image_extensions = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
@@ -76,12 +82,15 @@ def _download_zip_images(document_id: str, images_dir: Path) -> dict[str, str]:
 
 
 def _rewrite_markdown_image_refs(markdown: str, document_id: str, ref_to_file: dict[str, str]) -> str:
-    """Replace [imageN]: <data:...> definitions with paths to images/{document_id}/imageN.ext."""
+    """Replace [imageN]: <data:...> definitions with paths to images/{safe_id}/imageN.ext.
+    Uses hyphenated doc_id in path to avoid underscores being parsed as markdown emphasis."""
 
     def repl(m: re.Match[str]) -> str:
         ref = m.group(1)
         filename = ref_to_file.get(ref, f"{ref}.png")
-        return f"[{ref}]: images/{document_id}/{filename}"
+        safe_id = _sanitize_doc_id_for_path(document_id)
+        url = f"images/{safe_id}/{filename}"
+        return f"[{ref}]: {url}"
 
     return re.sub(r"\[(image\d+)\]:\s*<[^>]+>", repl, markdown)
 

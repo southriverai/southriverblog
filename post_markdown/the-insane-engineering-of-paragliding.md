@@ -88,12 +88,12 @@ Drag can also be your friend. That “passive safety” A-wings are built around
 ![You merely adopted the sky. I was born in it][image5]  
 
 
-[image1]: images/1yiZzJee9BW_HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image1.png
+[image1]: images/1yiZzJee9BW-HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image1.png
 
-[image2]: images/1yiZzJee9BW_HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image4.png
+[image2]: images/1yiZzJee9BW-HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image4.png
 
-[image3]: images/1yiZzJee9BW_HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image5.png
+[image3]: images/1yiZzJee9BW-HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image5.png
 
-[image4]: images/1yiZzJee9BW_HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image2.jpg
+[image4]: images/1yiZzJee9BW-HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image2.jpg
 
-[image5]: images/1yiZzJee9BW_HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image3.jpg
+[image5]: images/1yiZzJee9BW-HECceGlxDo6JDm0PPdO7CQ30Cak7H1Ro/image3.jpg
