@@ -1,4 +1,4 @@
-# Why i canceled my economist subscription after 20 years of reading weekly
+# Why I canceled my economist subscription after 20 years of reading weekly
 
 I have been an avid reader of the economist for over two decades. Over that period I paid about five thousand euros in subscribers fees. First I had a print only subscription, digital reading was a rarity in the early 2000’s. Then switched to a print- and-digital-one for holidays and such. Since I started traveling full time I have a digital-only subscription to the economist. Although the relationship was not always as smooth as it could be, I always received what seemed like good value. 
 

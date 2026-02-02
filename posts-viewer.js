@@ -24,6 +24,45 @@ function formatDate(isoStr) {
 }
 
 /**
+ * Convert markdown-escaped LaTeX to proper LaTeX for KaTeX.
+ * Handles \_, \=, \+, \-, \*, \\ etc.
+ */
+function unescapeLatex(str) {
+    return str
+        .replace(/\\\\/g, '\u0001')  // temp placeholder for \\
+        .replace(/\\_/g, '_')
+        .replace(/\\=/g, '=')
+        .replace(/\\\+/g, '+')
+        .replace(/\\-/g, '-')
+        .replace(/\\\*/g, '*')
+        .replace(/\u0001/g, '\\');
+}
+
+/**
+ * Preprocess markdown: extract LaTeX from $$...$$ (block) and $...$ (inline), replace with HTML placeholders
+ */
+function preprocessLatex(markdown) {
+    const mathBlocks = [];
+    let result = markdown;
+
+    // Block math $$...$$ first (so we don't confuse with inline $)
+    result = result.replace(/\$\$([\s\S]*?)\$\$/g, (_, content) => {
+        const id = mathBlocks.length;
+        mathBlocks.push({ content: unescapeLatex(content.trim()), display: true });
+        return `\n\n<!--MATHBLOCK${id}-->\n\n`;
+    });
+
+    // Inline math $...$ (single $ not followed by $)
+    result = result.replace(/\$([^$\n]+?)\$/g, (_, content) => {
+        const id = mathBlocks.length;
+        mathBlocks.push({ content: unescapeLatex(content.trim()), display: false });
+        return `<!--MATHINLINE${id}-->`;
+    });
+
+    return { markdown: result, mathBlocks };
+}
+
+/**
  * Extract a plain-text teaser from markdown (first ~200 chars after title, markdown stripped)
  */
 function extractTeaser(markdown, maxLength = 200) {
@@ -231,26 +270,31 @@ class PostsViewer {
      * Converts plain text image filenames to markdown image syntax and proper paths
      */
     processImages(markdown) {
-        // First, process the raw markdown to convert plain text image references
-        // Look for lines that are just image filenames (like "fossil fuel.png")
-        // This pattern matches lines that contain only an image filename
-        const lines = markdown.split('\n');
+        const { markdown: markdownWithPlaceholders, mathBlocks } = preprocessLatex(markdown);
+        const lines = markdownWithPlaceholders.split('\n');
         const processedLines = lines.map(line => {
             const trimmed = line.trim();
-            // Check if line is just an image filename
             const imagePattern = /^[\w\s\-]+\.(png|jpg|jpeg|gif)$/i;
             if (imagePattern.test(trimmed)) {
-                // Convert to markdown image syntax
                 return `![${trimmed}](chart_images/${trimmed})`;
             }
             return line;
         });
-        
         const processedMarkdown = processedLines.join('\n');
-        
-        // Parse markdown to HTML
         let html = this.marked.parse(processedMarkdown);
-        
+        mathBlocks.forEach(({ content, display }, i) => {
+            const placeholder = display ? `<!--MATHBLOCK${i}-->` : `<!--MATHINLINE${i}-->`;
+            if (typeof renderMathInElement !== 'undefined' && typeof katex !== 'undefined') {
+                try {
+                    const rendered = katex.renderToString(content, { displayMode: display, throwOnError: false });
+                    html = html.split(placeholder).join(rendered);
+                } catch {
+                    html = html.split(placeholder).join(this.escapeHtml(content));
+                }
+            } else {
+                html = html.split(placeholder).join(this.escapeHtml(content));
+            }
+        });
         // Create a temporary DOM element to parse HTML and add styling
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
@@ -347,6 +391,7 @@ class PostsViewer {
                 </div>
             </article>
         `;
+        this.renderMath(container);
     }
 
     /**
@@ -377,6 +422,22 @@ class PostsViewer {
                 ${postsHtml}
             </div>
         `;
+        this.renderMath(container);
+    }
+
+    /**
+     * Render LaTeX math in the container using KaTeX auto-render
+     */
+    renderMath(container) {
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(container, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false }
+                ],
+                throwOnError: false
+            });
+        }
     }
 
     /**
