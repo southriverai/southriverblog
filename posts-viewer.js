@@ -10,6 +10,39 @@ function slugToTitle(slug) {
     return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+/**
+ * Format ISO 8601 date for display (e.g. "2026-02-02T03:44:38Z" -> "Feb 2, 2026")
+ */
+function formatDate(isoStr) {
+    if (!isoStr) return '';
+    try {
+        const d = new Date(isoStr);
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+        return isoStr;
+    }
+}
+
+/**
+ * Extract a plain-text teaser from markdown (first ~200 chars after title, markdown stripped)
+ */
+function extractTeaser(markdown, maxLength = 200) {
+    const lines = markdown.split('\n').filter(l => l.trim());
+    const bodyStart = lines[0] && lines[0].startsWith('#') ? 1 : 0;
+    const body = lines.slice(bodyStart).join(' ');
+    const stripped = body
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/__([^_]+)__/g, '$1')
+        .replace(/_([^_]+)_/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/^#+\s*/gm, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (stripped.length <= maxLength) return stripped;
+    return stripped.slice(0, maxLength).trim() + '…';
+}
+
 class PostsViewer {
     constructor(containerId, options = {}) {
         this.containerId = containerId;
@@ -61,7 +94,7 @@ class PostsViewer {
     }
 
     /**
-     * Load only the manifest and build list of { slug, title } for landing
+     * Load manifest and post previews (title, dates, teaser) for landing page cards
      */
     async loadPostList() {
         try {
@@ -69,16 +102,39 @@ class PostsViewer {
             const manifestUrl = new URL('manifest.json', base);
             manifestUrl.searchParams.set('t', Date.now());
             const response = await fetch(manifestUrl, { cache: 'no-store' }).catch(() => null);
-            if (response && response.ok) {
-                const manifest = await response.json();
-                const files = manifest.files || [];
-                this.posts = files.map(filename => {
-                    const slug = filename.replace(/\.md$/i, '');
-                    return { slug, title: slugToTitle(slug) };
-                });
-            } else {
+            if (!response || !response.ok) {
                 this.showError('manifest.json not found.');
+                return;
             }
+            const manifest = await response.json();
+            const files = manifest.files || [];
+            const sorted = [...files].sort((a, b) => {
+                const aDate = (typeof a === 'object' ? a.created_at : '') || '';
+                const bDate = (typeof b === 'object' ? b.created_at : '') || '';
+                return bDate.localeCompare(aDate);
+            });
+            this.posts = await Promise.all(sorted.map(async (entry) => {
+                const filename = typeof entry === 'string' ? entry : entry.filename;
+                const slug = filename.replace(/\.md$/i, '');
+                const created_at = typeof entry === 'object' ? entry.created_at : undefined;
+                const updated_at = typeof entry === 'object' ? entry.updated_at : undefined;
+                let title = slugToTitle(slug);
+                let teaser = '';
+                try {
+                    const mdUrl = new URL(filename, base);
+                    mdUrl.searchParams.set('t', Date.now());
+                    const mdRes = await fetch(mdUrl, { cache: 'no-store' });
+                    if (mdRes.ok) {
+                        const markdown = await mdRes.text();
+                        const titleMatch = markdown.match(/^#\s+(.+)$/m);
+                        if (titleMatch) title = titleMatch[1].trim();
+                        teaser = extractTeaser(markdown);
+                    }
+                } catch {
+                    /* keep defaults */
+                }
+                return { slug, title, created_at, updated_at, teaser };
+            }));
         } catch (error) {
             this.showError('Failed to load posts.');
         }
@@ -118,9 +174,15 @@ class PostsViewer {
             if (response && response.ok) {
                 const manifest = await response.json();
                 const files = manifest.files || [];
+                const sorted = [...files].sort((a, b) => {
+                    const aDate = (typeof a === 'object' ? a.created_at : '') || '';
+                    const bDate = (typeof b === 'object' ? b.created_at : '') || '';
+                    return bDate.localeCompare(aDate);
+                });
 
-                for (const file of files) {
-                    await this.loadPost(file, base);
+                for (const entry of sorted) {
+                    const filename = typeof entry === 'string' ? entry : entry.filename;
+                    await this.loadPost(filename, base);
                 }
             } else {
                 this.showError('manifest.json not found. Please ensure the download script has created it, or manually create post_markdown/manifest.json with a list of markdown files.');
@@ -211,7 +273,7 @@ class PostsViewer {
     }
 
     /**
-     * Render landing page: list of post titles linking to post.html?slug=...
+     * Render landing page: post cards with title, dates, and teaser
      */
     renderList() {
         const container = document.getElementById(this.containerId);
@@ -222,22 +284,32 @@ class PostsViewer {
             return;
         }
 
-        const countNote = `<p class="posts-count">${this.posts.length} post${this.posts.length !== 1 ? 's' : ''}</p>`;
-        const listHtml = this.posts.map(({ slug, title }) => {
+        const cardsHtml = this.posts.map(({ slug, title, created_at, updated_at, teaser }) => {
             const postUrl = new URL('post.html', window.location.href);
             postUrl.searchParams.set('slug', slug);
-            return `<li class="post-list-item"><a href="${this.escapeHtml(postUrl.pathname + '?' + postUrl.searchParams.toString())}">${this.escapeHtml(title)}</a></li>`;
+            const href = this.escapeHtml(postUrl.pathname + '?' + postUrl.searchParams.toString());
+            const createdStr = formatDate(created_at);
+            const updatedStr = formatDate(updated_at);
+            const datesHtml = createdStr && updatedStr && createdStr !== updatedStr
+                ? `Created ${createdStr} · Updated ${updatedStr}`
+                : (createdStr || updatedStr) ? (createdStr || updatedStr) : '';
+            return `
+                <a href="${href}" class="post-card">
+                    <h3 class="post-card-title">${this.escapeHtml(title)}</h3>
+                    <div class="post-card-meta">${this.escapeHtml(datesHtml)}</div>
+                    ${teaser ? `<p class="post-card-teaser">${this.escapeHtml(teaser)}</p>` : ''}
+                </a>
+            `;
         }).join('');
 
         container.innerHTML = `
             <div class="posts-container">
                 <div class="posts-header">
-                    <h2>All Posts</h2>
-                    ${countNote}
+                    <h2>Posts</h2>
                 </div>
-                <ul class="post-list">
-                    ${listHtml}
-                </ul>
+                <div class="post-cards">
+                    ${cardsHtml}
+                </div>
             </div>
         `;
     }
@@ -285,7 +357,6 @@ class PostsViewer {
             return;
         }
 
-        const countNote = `<p class="posts-count">${this.posts.length} post${this.posts.length !== 1 ? 's' : ''}</p>`;
         const postsHtml = this.posts.map((post, index) => `
             <article class="post" data-post-index="${index}">
                 <div class="post-content">
@@ -297,8 +368,7 @@ class PostsViewer {
         container.innerHTML = `
             <div class="posts-container">
                 <div class="posts-header">
-                    <h2>All Posts</h2>
-                    ${countNote}
+                    <h2>Posts</h2>
                 </div>
                 ${postsHtml}
             </div>

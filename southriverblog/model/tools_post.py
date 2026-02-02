@@ -24,7 +24,15 @@ def slugify(text: str) -> str:
     return text
 
 
-def download_post(document_id: str) -> str:
+def download_post(document_id: str) -> tuple[Path, bool, bool]:
+    """
+    Download a Google Doc as markdown and save to post_markdown.
+
+    Returns:
+        Tuple of (path, is_new, content_changed)
+        - is_new: True if the file did not exist before
+        - content_changed: True if file was new or existing content differed from downloaded content
+    """
     url = f"https://docs.google.com/document/d/{document_id}/export?format=md"
     response = requests.get(url)
 
@@ -47,7 +55,11 @@ def download_post(document_id: str) -> str:
         Path("post_markdown").mkdir(parents=True, exist_ok=True)
     path_file = Path("post_markdown") / f"{slug}.md"
 
+    is_new = not path_file.exists()
+    existing_content = path_file.read_text(encoding="utf-8") if path_file.exists() else ""
+    content_changed = is_new or existing_content != markdown_content
+
     with path_file.open("w", encoding="utf-8") as f:
         f.write(markdown_content)
 
-    return path_file
+    return (path_file, is_new, content_changed)

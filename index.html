@@ -31,7 +31,7 @@
         h1 {
             color: #333;
             margin-bottom: 10px;
-            font-size: 2.5em;
+            font-size: 3em;
         }
         
         /* Posts styling */
@@ -40,6 +40,7 @@
         }
 
         .posts-header {
+            margin-top: 24px;
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 2px solid #e0e0e0;
@@ -157,24 +158,50 @@
             border-radius: 8px;
         }
 
-        .post-list {
-            list-style: none;
+        .post-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .post-list-item {
+        .post-card {
+            display: block;
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            text-decoration: none;
+            color: inherit;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .post-card:hover {
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .post-card-title {
+            color: #333;
+            font-size: 1.25em;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .post-card-meta {
+            color: #666;
+            font-size: 0.85em;
             margin-bottom: 12px;
         }
 
-        .post-list-item a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 1.1em;
-            border-bottom: 1px solid transparent;
-            transition: border-color 0.3s ease;
-        }
-
-        .post-list-item a:hover {
-            border-bottom-color: #667eea;
+        .post-card-teaser {
+            color: #555;
+            font-size: 0.95em;
+            line-height: 1.5;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
     </style>
 </head>
