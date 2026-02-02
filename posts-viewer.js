@@ -3,24 +3,29 @@
  * Loads and renders all markdown posts from the post_markdown directory
  */
 
+/**
+ * Convert slug to title (e.g. "the-speed-to-fly" -> "The Speed To Fly")
+ */
+function slugToTitle(slug) {
+    return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 class PostsViewer {
-    constructor(containerId) {
+    constructor(containerId, options = {}) {
         this.containerId = containerId;
         this.posts = [];
         this.marked = null;
+        this.listOnly = !!options.listOnly;
     }
 
     /**
-     * Initialize the posts viewer
+     * Initialize the posts viewer (list of titles on landing, or single post by slug)
      */
     async init() {
-        // Load marked.js for markdown rendering
         if (typeof marked === 'undefined') {
             await this.loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js');
         }
         this.marked = marked;
-        
-        // Configure marked options
         this.marked.setOptions({
             breaks: true,
             gfm: true,
@@ -28,9 +33,55 @@ class PostsViewer {
             mangle: false
         });
 
-        // Load and render posts
-        await this.loadPosts();
-        this.render();
+        if (this.listOnly) {
+            await this.loadPostList();
+            this.renderList();
+        } else {
+            await this.loadPosts();
+            this.render();
+        }
+    }
+
+    /**
+     * Initialize single-post view by slug (for post.html?slug=...)
+     */
+    async initSingle(slug) {
+        if (typeof marked === 'undefined') {
+            await this.loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js');
+        }
+        this.marked = marked;
+        this.marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: true,
+            mangle: false
+        });
+        await this.loadPost(slug + '.md', this.getPostMarkdownBase());
+        this.renderSingle();
+    }
+
+    /**
+     * Load only the manifest and build list of { slug, title } for landing
+     */
+    async loadPostList() {
+        try {
+            const base = this.getPostMarkdownBase();
+            const manifestUrl = new URL('manifest.json', base);
+            manifestUrl.searchParams.set('t', Date.now());
+            const response = await fetch(manifestUrl, { cache: 'no-store' }).catch(() => null);
+            if (response && response.ok) {
+                const manifest = await response.json();
+                const files = manifest.files || [];
+                this.posts = files.map(filename => {
+                    const slug = filename.replace(/\.md$/i, '');
+                    return { slug, title: slugToTitle(slug) };
+                });
+            } else {
+                this.showError('manifest.json not found.');
+            }
+        } catch (error) {
+            this.showError('Failed to load posts.');
+        }
     }
 
     /**
@@ -47,57 +98,61 @@ class PostsViewer {
     }
 
     /**
+     * Base URL for post_markdown (works when site is in a subpath, e.g. GitHub Pages or localhost subdir)
+     */
+    getPostMarkdownBase() {
+        return new URL('post_markdown/', window.location.href).href;
+    }
+
+    /**
      * Load all markdown posts from the post_markdown directory
      */
     async loadPosts() {
         try {
-            // Get list of markdown files
-            // Note: This requires a server-side endpoint or a list of files
-            // For now, we'll try to fetch known files or use a directory listing
-            
-            // Try to fetch a posts manifest or list files
-            const response = await fetch('post_markdown/manifest.json').catch(() => null);
-            
+            const base = this.getPostMarkdownBase();
+            const manifestUrl = new URL('manifest.json', base);
+            manifestUrl.searchParams.set('t', Date.now());
+
+            const response = await fetch(manifestUrl, { cache: 'no-store' }).catch(() => null);
+
             if (response && response.ok) {
                 const manifest = await response.json();
                 const files = manifest.files || [];
-                
+
                 for (const file of files) {
-                    await this.loadPost(file);
+                    await this.loadPost(file, base);
                 }
             } else {
-                // Fallback: Try to discover markdown files by attempting common patterns
-                // This is a best-effort approach since we can't list directories in static sites
-                console.warn('manifest.json not found. Attempting to discover markdown files...');
-                
-                // Try common filenames or show error
                 this.showError('manifest.json not found. Please ensure the download script has created it, or manually create post_markdown/manifest.json with a list of markdown files.');
             }
         } catch (error) {
-            console.error('Error loading posts:', error);
             this.showError('Failed to load posts. Please check the console for details.');
         }
     }
 
     /**
      * Load a single markdown post
+     * @param {string} filename - e.g. "post.md"
+     * @param {string} [base] - base URL for post_markdown (from getPostMarkdownBase())
      */
-    async loadPost(filename) {
+    async loadPost(filename, base) {
+        const postBase = base ?? this.getPostMarkdownBase();
+        const url = new URL(filename, postBase);
+        url.searchParams.set('t', Date.now());
+
         try {
-            const response = await fetch(`post_markdown/${encodeURIComponent(filename)}`);
+            const response = await fetch(url, { cache: 'no-store' });
             if (!response.ok) {
-                throw new Error(`Failed to load ${filename}: ${response.statusText}`);
+                throw new Error(`${response.status} ${response.statusText}`);
             }
-            
+
             const markdown = await response.text();
-            
-            // Extract title from first heading or filename
+
             const titleMatch = markdown.match(/^#\s+(.+)$/m);
             const title = titleMatch ? titleMatch[1] : filename.replace('.md', '');
-            
-            // Process image references - convert to use chart_images directory
+
             const processedHtml = this.processImages(markdown);
-            
+
             this.posts.push({
                 filename,
                 title,
@@ -105,7 +160,7 @@ class PostsViewer {
                 rawMarkdown: markdown
             });
         } catch (error) {
-            console.error(`Error loading post ${filename}:`, error);
+            // Skip failed posts
         }
     }
 
@@ -156,20 +211,81 @@ class PostsViewer {
     }
 
     /**
-     * Render all posts to the container
+     * Render landing page: list of post titles linking to post.html?slug=...
      */
-    render() {
+    renderList() {
         const container = document.getElementById(this.containerId);
-        if (!container) {
-            console.error(`Container with id "${this.containerId}" not found`);
-            return;
-        }
+        if (!container) return;
 
         if (this.posts.length === 0) {
             container.innerHTML = '<p class="no-posts">No posts found.</p>';
             return;
         }
 
+        const countNote = `<p class="posts-count">${this.posts.length} post${this.posts.length !== 1 ? 's' : ''}</p>`;
+        const listHtml = this.posts.map(({ slug, title }) => {
+            const postUrl = new URL('post.html', window.location.href);
+            postUrl.searchParams.set('slug', slug);
+            return `<li class="post-list-item"><a href="${this.escapeHtml(postUrl.pathname + '?' + postUrl.searchParams.toString())}">${this.escapeHtml(title)}</a></li>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="posts-container">
+                <div class="posts-header">
+                    <h2>All Posts</h2>
+                    ${countNote}
+                </div>
+                <ul class="post-list">
+                    ${listHtml}
+                </ul>
+            </div>
+        `;
+    }
+
+    /**
+     * Render single post (for post.html)
+     */
+    renderSingle() {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        if (this.posts.length === 0) {
+            container.innerHTML = '<p class="no-posts">Post not found.</p>';
+            return;
+        }
+
+        const post = this.posts[0];
+        if (post.title && typeof document !== 'undefined') {
+            document.title = post.title + ' — South River Blog';
+        }
+        if (typeof history !== 'undefined' && history.replaceState) {
+            const slug = (post.filename || '').replace(/\.md$/i, '');
+            const canonicalUrl = new URL('post.html', window.location.href);
+            canonicalUrl.searchParams.set('slug', slug);
+            history.replaceState(null, '', canonicalUrl.pathname + '?' + canonicalUrl.searchParams.toString());
+        }
+        container.innerHTML = `
+            <article class="post">
+                <div class="post-content">
+                    ${post.html}
+                </div>
+            </article>
+        `;
+    }
+
+    /**
+     * Render all posts (full content) — used when listOnly is false and not single post
+     */
+    render() {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        if (this.posts.length === 0) {
+            container.innerHTML = '<p class="no-posts">No posts found.</p>';
+            return;
+        }
+
+        const countNote = `<p class="posts-count">${this.posts.length} post${this.posts.length !== 1 ? 's' : ''}</p>`;
         const postsHtml = this.posts.map((post, index) => `
             <article class="post" data-post-index="${index}">
                 <div class="post-content">
@@ -182,7 +298,7 @@ class PostsViewer {
             <div class="posts-container">
                 <div class="posts-header">
                     <h2>All Posts</h2>
-                    <p class="posts-count">${this.posts.length} post${this.posts.length !== 1 ? 's' : ''}</p>
+                    ${countNote}
                 </div>
                 ${postsHtml}
             </div>

@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>South River Blog</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="plot-config.js"></script>
-    <script src="chart-viewer.js"></script>
     <script src="posts-viewer.js"></script>
     <style>
         * {
@@ -37,66 +34,6 @@
             font-size: 2.5em;
         }
         
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
-        
-        .plot-container {
-            margin-top: 30px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-        }
-        
-        #plotly-chart {
-            background: white;
-            border-radius: 4px;
-            min-height: 500px;
-            width: 100%;
-        }
-
-        /* Tabs styling */
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid #e0e0e0;
-            margin-bottom: 30px;
-            gap: 0;
-        }
-
-        .tab-button {
-            padding: 12px 24px;
-            background: none;
-            border: none;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            color: #666;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .tab-button:hover {
-            color: #333;
-            background: #f8f9fa;
-        }
-
-        .tab-button.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-            background: #f8f9fa;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         /* Posts styling */
         .posts-container {
             max-width: 100%;
@@ -219,79 +156,46 @@
             background: #ffebee;
             border-radius: 8px;
         }
+
+        .post-list {
+            list-style: none;
+        }
+
+        .post-list-item {
+            margin-bottom: 12px;
+        }
+
+        .post-list-item a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 1.1em;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.3s ease;
+        }
+
+        .post-list-item a:hover {
+            border-bottom-color: #667eea;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>South River Blog</h1>
-        <p class="subtitle">Data visualization and insights</p>
-        
-        <!-- Tabs Navigation -->
-        <div class="tabs">
-            <button class="tab-button active" data-tab="posts">Posts</button>
-            <button class="tab-button" data-tab="chart">Chart</button>
-        </div>
 
-        <!-- Posts Tab Content -->
-        <div id="posts-tab" class="tab-content active">
-            <div id="posts-container"></div>
-        </div>
-
-        <!-- Chart Tab Content -->
-        <div id="chart-tab" class="tab-content">
-            <h2 style="margin-bottom: 20px; color: #333;">Democratization and Autocratization Trends Over Time</h2>
-            <div class="plot-container">
-                <div id="plotly-chart"></div>
-            </div>
-        </div>
+        <div id="posts-container"></div>
     </div>
 
     <script>
-        // Tab switching functionality
         document.addEventListener('DOMContentLoaded', function() {
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-            let postsViewer = null;
-            let chartViewer = null;
-
-            // Tab switching
-            tabButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const targetTab = this.getAttribute('data-tab');
-                    
-                    // Update active states
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-                    
-                    this.classList.add('active');
-                    document.getElementById(`${targetTab}-tab`).classList.add('active');
-
-                    // Initialize posts viewer when posts tab is first opened
-                    if (targetTab === 'posts' && !postsViewer) {
-                        postsViewer = new PostsViewer('posts-container');
-                        postsViewer.init().catch(error => {
-                            console.error('Failed to initialize posts viewer:', error);
-                            document.getElementById('posts-container').innerHTML = 
-                                '<div class="error-message">Failed to load posts. Please check the console for details.</div>';
-                        });
-                    }
-
-                    // Initialize chart viewer when chart tab is first opened
-                    if (targetTab === 'chart' && !chartViewer) {
-                        chartViewer = new ChartViewer('plotly-chart');
-                        chartViewer.init().catch(error => {
-                            console.error('Failed to initialize chart viewer:', error);
-                        });
-                    }
-                });
-            });
-
-            // Initialize posts viewer on page load (default tab)
-            postsViewer = new PostsViewer('posts-container');
-            postsViewer.init().catch(error => {
-                console.error('Failed to initialize posts viewer:', error);
-                document.getElementById('posts-container').innerHTML = 
-                    '<div class="error-message">Failed to load posts. Please check the console for details.</div>';
+            if (typeof PostsViewer !== 'function') {
+                document.getElementById('posts-container').innerHTML =
+                    '<div class="error-message">Failed to load posts.</div>';
+                return;
+            }
+            const postsViewer = new PostsViewer('posts-container', { listOnly: true });
+            postsViewer.init().catch(function() {
+                document.getElementById('posts-container').innerHTML =
+                    '<div class="error-message">Failed to load posts.</div>';
             });
         });
     </script>
