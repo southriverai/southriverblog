@@ -137,11 +137,41 @@
         }
 
         .post-content img {
-            max-width: 100%;
-            height: auto;
-            margin: 20px 0;
+            display: block;
+            margin: 20px auto;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-content .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 20px 0;
+        }
+
+        .post-content table {
+            width: 100%;
+            min-width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95em;
+        }
+
+        .post-content th,
+        .post-content td {
+            padding: 10px 14px;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+        }
+
+        .post-content th {
+            background: #f0f0f0;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .post-content tr:nth-child(even) {
+            background: #fafafa;
         }
 
         .no-posts,

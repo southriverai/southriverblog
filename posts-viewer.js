@@ -255,18 +255,22 @@ class PostsViewer {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
-        // Find all images and ensure proper styling
+        // Find all images: centre them and render at full resolution
         const images = tempDiv.querySelectorAll('img');
         images.forEach(img => {
-            // Add styling if not already styled
-            if (!img.style.maxWidth) {
-                img.style.maxWidth = '100%';
-                img.style.height = 'auto';
-                img.style.margin = '20px 0';
-                img.style.display = 'block';
-                img.style.borderRadius = '8px';
-                img.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-            }
+            img.style.display = 'block';
+            img.style.margin = '20px auto';
+            img.style.borderRadius = '8px';
+            img.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+        });
+
+        // Wrap tables for full width and mobile-friendly horizontal scroll
+        const tables = tempDiv.querySelectorAll('table');
+        tables.forEach(table => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
         });
         
         return tempDiv.innerHTML;
