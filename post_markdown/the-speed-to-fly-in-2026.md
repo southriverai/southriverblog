@@ -14,7 +14,7 @@ $$
 V\_{xc} \= \\frac{V\_{gl} \\cdot V\_{c}}{V\_{c} \+ V\_{s}}  
 $$
 
-However if we want to optimize $V\_{xc}$ using $V\_{gl}$ we have to realize that sink $V\_{s}$ is actually a function of glide $V\_{gl}$ as  F\_{s}(V\_{gl})  This is because the way we speed up is by angling our wing forwards so it will fall faster.
+However if we want to optimize $V\_{xc}$ using $V\_{gl}$ we have to realize that sink $V\_{s}$ is actually a function of glide $V\_{gl}$ as $F\_{s}(V\_{gl})$  This is because the way we speed up is by angling our wing forwards so it will fall faster.
 
 $$  
 V\_{xc} \= \\frac{V\_{gl} \* V\_{c}}{V\_{c} \+ F\_{s}(V\_{gl})}  
