@@ -17,13 +17,13 @@ $$
 However if we want to optimize $V\_{xc}$ using $V\_{gl}$ we have to realize that sink $V\_{s}$ is actually a function of glide $V\_{gl}$ as $F\_{s}(V\_{gl})$  This is because the way we speed up is by angling our wing forwards so it will fall faster.
 
 $$  
-V\_{xc} \= \\frac{V\_{gl} \* V\_{c}}{V\_{c} \+ F\_{s}(V\_{gl})}  
+V\_{xc} \= \\frac{V\_{gl}  \\cdot  V\_{c}}{V\_{c} \+ F\_{s}(V\_{gl})}  
 $$
 
 To maximize $V\_{xc}$ using $V\_{gl}$ we now require a derivable version of $F\_{s}(V\_{gl})$, make a derivative towards $V\_{gl}$ for the whole equation and find the 0s. 
 
 $$  
-V\_{c} \+ F\_{s}(V\_{gl}) \- V\_{gl} \* F\_s'(V\_{gl}) \= 0  
+V\_{c} \+ F\_{s}(V\_{gl}) \- V\_{gl}  \\cdot  F\_s'(V\_{gl}) \= 0  
 $$
 
 Unfortunately there are many reasons why MacCready is not particularly useful for paragliding. First of all it assumes prior knowledge of where the thermals are and how strong they are going to be. Annoying, but once you have flown the first few thermals of the day you should be able to make a reasonable estimate. The bigger problem is that compared to a sailplane a paraglider has a far more limited speed range. A typical B wing can go between 20 and 55 km/h, a modern sailplane goes between 100 and 300 km/h and speeding up results in relatively smaller sink increases.
